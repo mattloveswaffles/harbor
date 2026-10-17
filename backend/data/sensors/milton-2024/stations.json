@@ -1,0 +1,26 @@
+[
+ {
+  "id": "coops_8726520",
+  "source": "noaa_tide",
+  "name": "St. Petersburg tide gauge",
+  "lat": 27.7606,
+  "lon": -82.6269,
+  "attribution": "NOAA CO-OPS"
+ },
+ {
+  "id": "usgs_02301500",
+  "source": "usgs_gauge",
+  "name": "Alafia River at Lithia",
+  "lat": 27.8717,
+  "lon": -82.2115,
+  "attribution": "USGS, flood categories NOAA NWPS"
+ },
+ {
+  "id": "ndbc_42036",
+  "source": "noaa_buoy",
+  "name": "West Tampa buoy (42036)",
+  "lat": 28.501,
+  "lon": -84.508,
+  "attribution": "NOAA NDBC"
+ }
+]

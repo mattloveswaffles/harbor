@@ -1,0 +1,974 @@
+{
+ "source": "Yahoo Finance daily closes",
+ "fetched_for": "Hurricane Milton replay",
+ "symbols": {
+  "TBUX": {
+   "name": "T. Rowe Price Ultra Short-Term Bond ETF",
+   "closes": [
+    {
+     "date": "2024-09-23",
+     "close_cents": 4996
+    },
+    {
+     "date": "2024-09-24",
+     "close_cents": 4998
+    },
+    {
+     "date": "2024-09-25",
+     "close_cents": 4978
+    },
+    {
+     "date": "2024-09-26",
+     "close_cents": 4974
+    },
+    {
+     "date": "2024-09-27",
+     "close_cents": 4979
+    },
+    {
+     "date": "2024-09-30",
+     "close_cents": 4976
+    },
+    {
+     "date": "2024-10-01",
+     "close_cents": 4982
+    },
+    {
+     "date": "2024-10-02",
+     "close_cents": 4981
+    },
+    {
+     "date": "2024-10-03",
+     "close_cents": 4986
+    },
+    {
+     "date": "2024-10-04",
+     "close_cents": 4975
+    },
+    {
+     "date": "2024-10-07",
+     "close_cents": 4975
+    },
+    {
+     "date": "2024-10-08",
+     "close_cents": 4980
+    },
+    {
+     "date": "2024-10-09",
+     "close_cents": 4976
+    },
+    {
+     "date": "2024-10-10",
+     "close_cents": 4977
+    },
+    {
+     "date": "2024-10-11",
+     "close_cents": 4978
+    },
+    {
+     "date": "2024-10-14",
+     "close_cents": 4979
+    },
+    {
+     "date": "2024-10-15",
+     "close_cents": 4978
+    },
+    {
+     "date": "2024-10-16",
+     "close_cents": 4978
+    },
+    {
+     "date": "2024-10-17",
+     "close_cents": 4981
+    },
+    {
+     "date": "2024-10-18",
+     "close_cents": 4983
+    },
+    {
+     "date": "2024-10-21",
+     "close_cents": 4983
+    },
+    {
+     "date": "2024-10-22",
+     "close_cents": 4985
+    },
+    {
+     "date": "2024-10-23",
+     "close_cents": 4984
+    },
+    {
+     "date": "2024-10-24",
+     "close_cents": 4988
+    },
+    {
+     "date": "2024-10-25",
+     "close_cents": 4984
+    },
+    {
+     "date": "2024-10-28",
+     "close_cents": 4964
+    },
+    {
+     "date": "2024-10-29",
+     "close_cents": 4969
+    },
+    {
+     "date": "2024-10-30",
+     "close_cents": 4967
+    },
+    {
+     "date": "2024-10-31",
+     "close_cents": 4967
+    }
+   ]
+  },
+  "TCAF": {
+   "name": "T. Rowe Price Capital Appreciation Equity ETF",
+   "closes": [
+    {
+     "date": "2024-09-23",
+     "close_cents": 3293
+    },
+    {
+     "date": "2024-09-24",
+     "close_cents": 3309
+    },
+    {
+     "date": "2024-09-25",
+     "close_cents": 3296
+    },
+    {
+     "date": "2024-09-26",
+     "close_cents": 3318
+    },
+    {
+     "date": "2024-09-27",
+     "close_cents": 3315
+    },
+    {
+     "date": "2024-09-30",
+     "close_cents": 3325
+    },
+    {
+     "date": "2024-10-01",
+     "close_cents": 3295
+    },
+    {
+     "date": "2024-10-02",
+     "close_cents": 3296
+    },
+    {
+     "date": "2024-10-03",
+     "close_cents": 3288
+    },
+    {
+     "date": "2024-10-04",
+     "close_cents": 3313
+    },
+    {
+     "date": "2024-10-07",
+     "close_cents": 3283
+    },
+    {
+     "date": "2024-10-08",
+     "close_cents": 3314
+    },
+    {
+     "date": "2024-10-09",
+     "close_cents": 3331
+    },
+    {
+     "date": "2024-10-10",
+     "close_cents": 3324
+    },
+    {
+     "date": "2024-10-11",
+     "close_cents": 3345
+    },
+    {
+     "date": "2024-10-14",
+     "close_cents": 3375
+    },
+    {
+     "date": "2024-10-15",
+     "close_cents": 3347
+    },
+    {
+     "date": "2024-10-16",
+     "close_cents": 3355
+    },
+    {
+     "date": "2024-10-17",
+     "close_cents": 3358
+    },
+    {
+     "date": "2024-10-18",
+     "close_cents": 3371
+    },
+    {
+     "date": "2024-10-21",
+     "close_cents": 3367
+    },
+    {
+     "date": "2024-10-22",
+     "close_cents": 3355
+    },
+    {
+     "date": "2024-10-23",
+     "close_cents": 3331
+    },
+    {
+     "date": "2024-10-24",
+     "close_cents": 3325
+    },
+    {
+     "date": "2024-10-25",
+     "close_cents": 3327
+    },
+    {
+     "date": "2024-10-28",
+     "close_cents": 3336
+    },
+    {
+     "date": "2024-10-29",
+     "close_cents": 3343
+    },
+    {
+     "date": "2024-10-30",
+     "close_cents": 3336
+    },
+    {
+     "date": "2024-10-31",
+     "close_cents": 3271
+    }
+   ]
+  },
+  "TSPA": {
+   "name": "T. Rowe Price US Equity Research ETF",
+   "closes": [
+    {
+     "date": "2024-09-23",
+     "close_cents": 3585
+    },
+    {
+     "date": "2024-09-24",
+     "close_cents": 3594
+    },
+    {
+     "date": "2024-09-25",
+     "close_cents": 3586
+    },
+    {
+     "date": "2024-09-26",
+     "close_cents": 3599
+    },
+    {
+     "date": "2024-09-27",
+     "close_cents": 3594
+    },
+    {
+     "date": "2024-09-30",
+     "close_cents": 3611
+    },
+    {
+     "date": "2024-10-01",
+     "close_cents": 3579
+    },
+    {
+     "date": "2024-10-02",
+     "close_cents": 3580
+    },
+    {
+     "date": "2024-10-03",
+     "close_cents": 3576
+    },
+    {
+     "date": "2024-10-04",
+     "close_cents": 3607
+    },
+    {
+     "date": "2024-10-07",
+     "close_cents": 3571
+    },
+    {
+     "date": "2024-10-08",
+     "close_cents": 3603
+    },
+    {
+     "date": "2024-10-09",
+     "close_cents": 3633
+    },
+    {
+     "date": "2024-10-10",
+     "close_cents": 3623
+    },
+    {
+     "date": "2024-10-11",
+     "close_cents": 3651
+    },
+    {
+     "date": "2024-10-14",
+     "close_cents": 3679
+    },
+    {
+     "date": "2024-10-15",
+     "close_cents": 3650
+    },
+    {
+     "date": "2024-10-16",
+     "close_cents": 3665
+    },
+    {
+     "date": "2024-10-17",
+     "close_cents": 3665
+    },
+    {
+     "date": "2024-10-18",
+     "close_cents": 3679
+    },
+    {
+     "date": "2024-10-21",
+     "close_cents": 3674
+    },
+    {
+     "date": "2024-10-22",
+     "close_cents": 3676
+    },
+    {
+     "date": "2024-10-23",
+     "close_cents": 3640
+    },
+    {
+     "date": "2024-10-24",
+     "close_cents": 3645
+    },
+    {
+     "date": "2024-10-25",
+     "close_cents": 3643
+    },
+    {
+     "date": "2024-10-28",
+     "close_cents": 3655
+    },
+    {
+     "date": "2024-10-29",
+     "close_cents": 3664
+    },
+    {
+     "date": "2024-10-30",
+     "close_cents": 3653
+    },
+    {
+     "date": "2024-10-31",
+     "close_cents": 3582
+    }
+   ]
+  },
+  "TOUS": {
+   "name": "T. Rowe Price International Equity ETF",
+   "closes": [
+    {
+     "date": "2024-09-23",
+     "close_cents": 2885
+    },
+    {
+     "date": "2024-09-24",
+     "close_cents": 2901
+    },
+    {
+     "date": "2024-09-25",
+     "close_cents": 2885
+    },
+    {
+     "date": "2024-09-26",
+     "close_cents": 2955
+    },
+    {
+     "date": "2024-09-27",
+     "close_cents": 2940
+    },
+    {
+     "date": "2024-09-30",
+     "close_cents": 2914
+    },
+    {
+     "date": "2024-10-01",
+     "close_cents": 2898
+    },
+    {
+     "date": "2024-10-02",
+     "close_cents": 2891
+    },
+    {
+     "date": "2024-10-03",
+     "close_cents": 2864
+    },
+    {
+     "date": "2024-10-04",
+     "close_cents": 2891
+    },
+    {
+     "date": "2024-10-07",
+     "close_cents": 2875
+    },
+    {
+     "date": "2024-10-08",
+     "close_cents": 2869
+    },
+    {
+     "date": "2024-10-09",
+     "close_cents": 2877
+    },
+    {
+     "date": "2024-10-10",
+     "close_cents": 2873
+    },
+    {
+     "date": "2024-10-11",
+     "close_cents": 2888
+    },
+    {
+     "date": "2024-10-14",
+     "close_cents": 2897
+    },
+    {
+     "date": "2024-10-15",
+     "close_cents": 2855
+    },
+    {
+     "date": "2024-10-16",
+     "close_cents": 2856
+    },
+    {
+     "date": "2024-10-17",
+     "close_cents": 2867
+    },
+    {
+     "date": "2024-10-18",
+     "close_cents": 2884
+    },
+    {
+     "date": "2024-10-21",
+     "close_cents": 2848
+    },
+    {
+     "date": "2024-10-22",
+     "close_cents": 2834
+    },
+    {
+     "date": "2024-10-23",
+     "close_cents": 2804
+    },
+    {
+     "date": "2024-10-24",
+     "close_cents": 2811
+    },
+    {
+     "date": "2024-10-25",
+     "close_cents": 2805
+    },
+    {
+     "date": "2024-10-28",
+     "close_cents": 2829
+    },
+    {
+     "date": "2024-10-29",
+     "close_cents": 2818
+    },
+    {
+     "date": "2024-10-30",
+     "close_cents": 2799
+    },
+    {
+     "date": "2024-10-31",
+     "close_cents": 2786
+    }
+   ]
+  },
+  "TOTR": {
+   "name": "T. Rowe Price Total Return ETF",
+   "closes": [
+    {
+     "date": "2024-09-23",
+     "close_cents": 4185
+    },
+    {
+     "date": "2024-09-24",
+     "close_cents": 4190
+    },
+    {
+     "date": "2024-09-25",
+     "close_cents": 4158
+    },
+    {
+     "date": "2024-09-26",
+     "close_cents": 4158
+    },
+    {
+     "date": "2024-09-27",
+     "close_cents": 4172
+    },
+    {
+     "date": "2024-09-30",
+     "close_cents": 4160
+    },
+    {
+     "date": "2024-10-01",
+     "close_cents": 4173
+    },
+    {
+     "date": "2024-10-02",
+     "close_cents": 4164
+    },
+    {
+     "date": "2024-10-03",
+     "close_cents": 4150
+    },
+    {
+     "date": "2024-10-04",
+     "close_cents": 4121
+    },
+    {
+     "date": "2024-10-07",
+     "close_cents": 4111
+    },
+    {
+     "date": "2024-10-08",
+     "close_cents": 4114
+    },
+    {
+     "date": "2024-10-09",
+     "close_cents": 4106
+    },
+    {
+     "date": "2024-10-10",
+     "close_cents": 4108
+    },
+    {
+     "date": "2024-10-11",
+     "close_cents": 4111
+    },
+    {
+     "date": "2024-10-14",
+     "close_cents": 4104
+    },
+    {
+     "date": "2024-10-15",
+     "close_cents": 4118
+    },
+    {
+     "date": "2024-10-16",
+     "close_cents": 4124
+    },
+    {
+     "date": "2024-10-17",
+     "close_cents": 4106
+    },
+    {
+     "date": "2024-10-18",
+     "close_cents": 4112
+    },
+    {
+     "date": "2024-10-21",
+     "close_cents": 4080
+    },
+    {
+     "date": "2024-10-22",
+     "close_cents": 4084
+    },
+    {
+     "date": "2024-10-23",
+     "close_cents": 4071
+    },
+    {
+     "date": "2024-10-24",
+     "close_cents": 4083
+    },
+    {
+     "date": "2024-10-25",
+     "close_cents": 4068
+    },
+    {
+     "date": "2024-10-28",
+     "close_cents": 4046
+    },
+    {
+     "date": "2024-10-29",
+     "close_cents": 4056
+    },
+    {
+     "date": "2024-10-30",
+     "close_cents": 4047
+    },
+    {
+     "date": "2024-10-31",
+     "close_cents": 4049
+    }
+   ]
+  },
+  "TCHP": {
+   "name": "T. Rowe Price Blue Chip Growth ETF",
+   "closes": [
+    {
+     "date": "2024-09-23",
+     "close_cents": 3948
+    },
+    {
+     "date": "2024-09-24",
+     "close_cents": 3960
+    },
+    {
+     "date": "2024-09-25",
+     "close_cents": 3964
+    },
+    {
+     "date": "2024-09-26",
+     "close_cents": 3973
+    },
+    {
+     "date": "2024-09-27",
+     "close_cents": 3946
+    },
+    {
+     "date": "2024-09-30",
+     "close_cents": 3964
+    },
+    {
+     "date": "2024-10-01",
+     "close_cents": 3917
+    },
+    {
+     "date": "2024-10-02",
+     "close_cents": 3918
+    },
+    {
+     "date": "2024-10-03",
+     "close_cents": 3933
+    },
+    {
+     "date": "2024-10-04",
+     "close_cents": 3964
+    },
+    {
+     "date": "2024-10-07",
+     "close_cents": 3926
+    },
+    {
+     "date": "2024-10-08",
+     "close_cents": 3983
+    },
+    {
+     "date": "2024-10-09",
+     "close_cents": 4006
+    },
+    {
+     "date": "2024-10-10",
+     "close_cents": 4009
+    },
+    {
+     "date": "2024-10-11",
+     "close_cents": 4022
+    },
+    {
+     "date": "2024-10-14",
+     "close_cents": 4058
+    },
+    {
+     "date": "2024-10-15",
+     "close_cents": 4008
+    },
+    {
+     "date": "2024-10-16",
+     "close_cents": 4019
+    },
+    {
+     "date": "2024-10-17",
+     "close_cents": 4025
+    },
+    {
+     "date": "2024-10-18",
+     "close_cents": 4056
+    },
+    {
+     "date": "2024-10-21",
+     "close_cents": 4072
+    },
+    {
+     "date": "2024-10-22",
+     "close_cents": 4074
+    },
+    {
+     "date": "2024-10-23",
+     "close_cents": 4015
+    },
+    {
+     "date": "2024-10-24",
+     "close_cents": 4040
+    },
+    {
+     "date": "2024-10-25",
+     "close_cents": 4060
+    },
+    {
+     "date": "2024-10-28",
+     "close_cents": 4065
+    },
+    {
+     "date": "2024-10-29",
+     "close_cents": 4096
+    },
+    {
+     "date": "2024-10-30",
+     "close_cents": 4086
+    },
+    {
+     "date": "2024-10-31",
+     "close_cents": 3978
+    }
+   ]
+  },
+  "TEQI": {
+   "name": "T. Rowe Price Equity Income ETF",
+   "closes": [
+    {
+     "date": "2024-09-23",
+     "close_cents": 4174
+    },
+    {
+     "date": "2024-09-24",
+     "close_cents": 4170
+    },
+    {
+     "date": "2024-09-25",
+     "close_cents": 4143
+    },
+    {
+     "date": "2024-09-26",
+     "close_cents": 4147
+    },
+    {
+     "date": "2024-09-27",
+     "close_cents": 4172
+    },
+    {
+     "date": "2024-09-30",
+     "close_cents": 4177
+    },
+    {
+     "date": "2024-10-01",
+     "close_cents": 4170
+    },
+    {
+     "date": "2024-10-02",
+     "close_cents": 4161
+    },
+    {
+     "date": "2024-10-03",
+     "close_cents": 4140
+    },
+    {
+     "date": "2024-10-04",
+     "close_cents": 4183
+    },
+    {
+     "date": "2024-10-07",
+     "close_cents": 4145
+    },
+    {
+     "date": "2024-10-08",
+     "close_cents": 4150
+    },
+    {
+     "date": "2024-10-09",
+     "close_cents": 4176
+    },
+    {
+     "date": "2024-10-10",
+     "close_cents": 4164
+    },
+    {
+     "date": "2024-10-11",
+     "close_cents": 4211
+    },
+    {
+     "date": "2024-10-14",
+     "close_cents": 4241
+    },
+    {
+     "date": "2024-10-15",
+     "close_cents": 4206
+    },
+    {
+     "date": "2024-10-16",
+     "close_cents": 4239
+    },
+    {
+     "date": "2024-10-17",
+     "close_cents": 4225
+    },
+    {
+     "date": "2024-10-18",
+     "close_cents": 4229
+    },
+    {
+     "date": "2024-10-21",
+     "close_cents": 4193
+    },
+    {
+     "date": "2024-10-22",
+     "close_cents": 4196
+    },
+    {
+     "date": "2024-10-23",
+     "close_cents": 4193
+    },
+    {
+     "date": "2024-10-24",
+     "close_cents": 4198
+    },
+    {
+     "date": "2024-10-25",
+     "close_cents": 4167
+    },
+    {
+     "date": "2024-10-28",
+     "close_cents": 4191
+    },
+    {
+     "date": "2024-10-29",
+     "close_cents": 4164
+    },
+    {
+     "date": "2024-10-30",
+     "close_cents": 4165
+    },
+    {
+     "date": "2024-10-31",
+     "close_cents": 4141
+    }
+   ]
+  },
+  "TDVG": {
+   "name": "T. Rowe Price Dividend Growth ETF",
+   "closes": [
+    {
+     "date": "2024-09-23",
+     "close_cents": 4087
+    },
+    {
+     "date": "2024-09-24",
+     "close_cents": 4080
+    },
+    {
+     "date": "2024-09-25",
+     "close_cents": 4066
+    },
+    {
+     "date": "2024-09-26",
+     "close_cents": 4077
+    },
+    {
+     "date": "2024-09-27",
+     "close_cents": 4078
+    },
+    {
+     "date": "2024-09-30",
+     "close_cents": 4096
+    },
+    {
+     "date": "2024-10-01",
+     "close_cents": 4070
+    },
+    {
+     "date": "2024-10-02",
+     "close_cents": 4069
+    },
+    {
+     "date": "2024-10-03",
+     "close_cents": 4049
+    },
+    {
+     "date": "2024-10-04",
+     "close_cents": 4069
+    },
+    {
+     "date": "2024-10-07",
+     "close_cents": 4029
+    },
+    {
+     "date": "2024-10-08",
+     "close_cents": 4052
+    },
+    {
+     "date": "2024-10-09",
+     "close_cents": 4082
+    },
+    {
+     "date": "2024-10-10",
+     "close_cents": 4068
+    },
+    {
+     "date": "2024-10-11",
+     "close_cents": 4103
+    },
+    {
+     "date": "2024-10-14",
+     "close_cents": 4135
+    },
+    {
+     "date": "2024-10-15",
+     "close_cents": 4110
+    },
+    {
+     "date": "2024-10-16",
+     "close_cents": 4126
+    },
+    {
+     "date": "2024-10-17",
+     "close_cents": 4121
+    },
+    {
+     "date": "2024-10-18",
+     "close_cents": 4126
+    },
+    {
+     "date": "2024-10-21",
+     "close_cents": 4100
+    },
+    {
+     "date": "2024-10-22",
+     "close_cents": 4084
+    },
+    {
+     "date": "2024-10-23",
+     "close_cents": 4073
+    },
+    {
+     "date": "2024-10-24",
+     "close_cents": 4063
+    },
+    {
+     "date": "2024-10-25",
+     "close_cents": 4044
+    },
+    {
+     "date": "2024-10-28",
+     "close_cents": 4053
+    },
+    {
+     "date": "2024-10-29",
+     "close_cents": 4039
+    },
+    {
+     "date": "2024-10-30",
+     "close_cents": 4029
+    },
+    {
+     "date": "2024-10-31",
+     "close_cents": 3980
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,62 @@
+{
+  "zip": "33602",
+  "lat": 27.953704,
+  "lon": -82.45631,
+  "zones": [
+    "FLC057",
+    "FLZ151"
+  ],
+  "source": "Iowa Environmental Mesonet VTEC archive",
+  "events": [
+    {
+      "type": "hurricane_watch",
+      "headline": "Hurricane Watch for FLZ151 (NWS TBW)",
+      "issued": "2024-10-07T09:33:00Z",
+      "expires": "2024-10-07T21:07:00Z",
+      "ugc": "FLZ151",
+      "vtec": "HU.A.1014",
+      "source": "iem",
+      "url": "https://mesonet.agron.iastate.edu/vtec/?year=2024&wfo=KTBW&phenomena=HU&significance=A&eventid=1014"
+    },
+    {
+      "type": "storm_surge_watch",
+      "headline": "Storm Surge Watch for FLZ151 (NWS TBW)",
+      "issued": "2024-10-07T09:33:00Z",
+      "expires": "2024-10-07T21:07:00Z",
+      "ugc": "FLZ151",
+      "vtec": "SS.A.1014",
+      "source": "iem",
+      "url": "https://mesonet.agron.iastate.edu/vtec/?year=2024&wfo=KTBW&phenomena=SS&significance=A&eventid=1014"
+    },
+    {
+      "type": "hurricane_warning",
+      "headline": "Hurricane Warning for FLZ151 (NWS TBW)",
+      "issued": "2024-10-07T21:07:00Z",
+      "expires": "2024-10-10T08:57:00Z",
+      "ugc": "FLZ151",
+      "vtec": "HU.W.1014",
+      "source": "iem",
+      "url": "https://mesonet.agron.iastate.edu/vtec/?year=2024&wfo=KTBW&phenomena=HU&significance=W&eventid=1014"
+    },
+    {
+      "type": "storm_surge_warning",
+      "headline": "Storm Surge Warning for FLZ151 (NWS TBW)",
+      "issued": "2024-10-07T21:07:00Z",
+      "expires": "2024-10-10T08:57:00Z",
+      "ugc": "FLZ151",
+      "vtec": "SS.W.1014",
+      "source": "iem",
+      "url": "https://mesonet.agron.iastate.edu/vtec/?year=2024&wfo=KTBW&phenomena=SS&significance=W&eventid=1014"
+    },
+    {
+      "type": "extreme_wind_warning",
+      "headline": "Extreme Wind Warning for FLC057 (NWS TBW)",
+      "issued": "2024-10-09T22:36:00Z",
+      "expires": "2024-10-10T01:30:00Z",
+      "ugc": "FLC057",
+      "vtec": "EW.W.0001",
+      "source": "iem",
+      "url": "https://mesonet.agron.iastate.edu/vtec/?year=2024&wfo=KTBW&phenomena=EW&significance=W&eventid=0001"
+    }
+  ]
+}

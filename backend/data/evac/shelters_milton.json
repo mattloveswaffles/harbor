@@ -1,0 +1,176 @@
+{
+ "sources": [
+  "https://hcfl.gov/newsroom/2024/10/09/hillsborough-county-opens-three-more-shelters-ahead-of-hurricane-milton",
+  "https://www.wusf.org/weather/2024-10-08/hurricane-milton-tampa-bay-county-by-county-shelter-list"
+ ],
+ "shelters": [
+  {
+   "id": "hc_burnett_middle_school",
+   "name": "Gordon Burnett Middle School",
+   "kind": "general",
+   "pets": "yes",
+   "ada": "unknown",
+   "lat": 28.00735,
+   "lon": -82.27979,
+   "address": "1010 North Kingsway Road Seffner",
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_durant_high_school",
+   "name": "Durant High School",
+   "kind": "general",
+   "pets": "yes",
+   "ada": "unknown",
+   "lat": 27.88799,
+   "lon": -82.17204,
+   "address": "Cougar Path",
+   "full_from": "2024-10-09T15:00:00Z",
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_middleton_high_school",
+   "name": "Middleton High School",
+   "kind": "general",
+   "pets": "yes",
+   "ada": "unknown",
+   "lat": 27.99063,
+   "lon": -82.43194,
+   "address": "4801 North 22nd Street Tampa",
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_shields_middle_school",
+   "name": "Shields Middle School",
+   "kind": "general",
+   "pets": "yes",
+   "ada": "unknown",
+   "lat": 27.74133,
+   "lon": -82.36953,
+   "address": null,
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_sickles_high_school",
+   "name": "Sickles High School",
+   "kind": "general",
+   "pets": "yes",
+   "ada": "unknown",
+   "lat": 28.07921,
+   "lon": -82.58253,
+   "address": null,
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_steinbrenner_high_school",
+   "name": "Steinbrenner High School",
+   "kind": "general",
+   "pets": "yes",
+   "ada": "unknown",
+   "lat": 28.16036,
+   "lon": -82.53484,
+   "address": null,
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_pizzo_elementary_school",
+   "name": "Pizzo K-8 School",
+   "kind": "general",
+   "pets": "no",
+   "ada": "unknown",
+   "lat": 28.05542,
+   "lon": -82.40344,
+   "address": "11701 USF Bull Run Drive Tampa",
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_reddick_elementary_school",
+   "name": "Doris Ross Reddick Elementary School",
+   "kind": "general",
+   "pets": "no",
+   "ada": "unknown",
+   "lat": 27.71816,
+   "lon": -82.3206,
+   "address": "325 West Lake Drive Wimauma",
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_mulrennan_middle_school",
+   "name": "Mulrennan Middle School",
+   "kind": "general",
+   "pets": "no",
+   "ada": "unknown",
+   "lat": 27.90664,
+   "lon": -82.22951,
+   "address": null,
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_lockhart_elementary_school",
+   "name": "Lockhart Elementary School",
+   "kind": "general",
+   "pets": "no",
+   "ada": "unknown",
+   "lat": 27.97808,
+   "lon": -82.43871,
+   "address": null,
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_collins",
+   "name": "Collins Elementary School",
+   "kind": "general",
+   "pets": "no",
+   "ada": "unknown",
+   "lat": 27.81149,
+   "lon": -82.31699,
+   "address": null,
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_erwin_technical_college",
+   "name": "Erwin Area Vocational Technical Center",
+   "kind": "special_needs",
+   "pets": "yes",
+   "ada": "unknown",
+   "lat": 27.99719,
+   "lon": -82.43595,
+   "address": null,
+   "full_from": "2024-10-09T12:00:00Z",
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_sumner_high_school",
+   "name": "Sumner High School",
+   "kind": "special_needs",
+   "pets": "yes",
+   "ada": "unknown",
+   "lat": 27.77198,
+   "lon": -82.32776,
+   "address": "10650 Balm Road Wimamua",
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  },
+  {
+   "id": "hc_strawberry_crest_high_school",
+   "name": "Strawberry Crest High School (IB)",
+   "kind": "special_needs",
+   "pets": "yes",
+   "ada": "unknown",
+   "lat": 28.02308,
+   "lon": -82.23597,
+   "address": null,
+   "full_from": null,
+   "source": "curated: hcfl.gov and WUSF, 7-9 Oct 2024; location from OpenStreetMap"
+  }
+ ]
+}
