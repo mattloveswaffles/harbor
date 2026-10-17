@@ -1,0 +1,104 @@
+"""FastAPI app: wiring, CORS, the error envelope, the clock header, the bank and the scheduler."""
+
+import threading
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy.engine import Engine
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from harbor.api import health_router, router
+from harbor.bank import Bank, NessieConfigError, NessieError, NessieRejected, make_bank
+from harbor.clock import Clock, DemoClock, RealClock, iso
+from harbor.config import Settings, get_settings
+from harbor.db import init_db, make_engine
+from harbor.errors import HarborError, error_body
+from harbor.ticker import start_scheduler
+
+
+def create_app(
+    settings: Settings | None = None,
+    *,
+    clock: Clock | None = None,
+    bank: Bank | None = None,
+    engine: Engine | None = None,
+) -> FastAPI:
+    """Build the app. Tests pass their own settings, clock, bank and engine."""
+    settings = settings or get_settings()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        scheduler = start_scheduler(app) if settings.scheduler_enabled else None
+        try:
+            yield
+        finally:
+            if scheduler:
+                scheduler.shutdown()
+            await app.state.bank.close()
+
+    app = FastAPI(title="Harbor API", version="1.1.0", lifespan=lifespan)
+    app.state.settings = settings
+    app.state.clock = clock or (DemoClock(settings.demo_start, settings.demo_speed) if settings.harbor_mode == "demo" else RealClock())
+    app.state.bank = bank or make_bank(settings)
+    app.state.engine = engine or make_engine(settings.database_url)
+    init_db(app.state.engine)
+    app.state.tick_lock = threading.Lock()
+    app.state.tick_cursor = None  # how far the scheduler has caught up (storm time)
+    app.state.ai_enabled = True  # the demo "AI offline" toggle (POST /demo/ai); no key means off anyway
+    app.state.anthropic_client = None  # made on first use (harbor.ai.claude.get_client)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["X-Server-Time"],
+    )
+    app.include_router(router)
+    app.include_router(health_router)
+
+    def server_time() -> str:
+        # The demo clock in demo mode, so countdowns follow the replay.
+        return iso(app.state.clock.now())
+
+    @app.middleware("http")
+    async def add_server_time(request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Server-Time"] = server_time()
+        return response
+
+    @app.exception_handler(HarborError)
+    async def harbor_error(request: Request, exc: HarborError):
+        return JSONResponse(error_body(exc.code, exc.message, exc.fields), status_code=exc.status)
+
+    @app.exception_handler(NessieError)
+    async def bank_error(request: Request, exc: NessieError):
+        if isinstance(exc, NessieConfigError):
+            status, code = 503, "bank_not_configured"
+        elif isinstance(exc, NessieRejected):
+            status, code = 502, "bank_rejected"
+        else:
+            status, code = 503, "bank_unavailable"
+        return JSONResponse(error_body(code, f"Nessie: {exc.message}"), status_code=status)
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error(request: Request, exc: StarletteHTTPException):
+        # Routes can raise HTTPException(status, detail={"code": ..., "message": ...}).
+        if isinstance(exc.detail, dict):
+            body = error_body(exc.detail.get("code", f"http_{exc.status_code}"), exc.detail.get("message", ""))
+        else:
+            body = error_body(f"http_{exc.status_code}", str(exc.detail))
+        return JSONResponse(body, status_code=exc.status_code, headers=getattr(exc, "headers", None))
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, exc: RequestValidationError):
+        fields = [{"loc": list(e["loc"]), "msg": e["msg"]} for e in exc.errors()]
+        return JSONResponse(error_body("validation_error", "Some fields are invalid.", fields), status_code=422)
+
+    return app
+
+
+app = create_app()
