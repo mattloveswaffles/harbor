@@ -319,7 +319,6 @@
 .harbor-app .bubble{padding:11px 15px;border-radius:18px;font-size:15px;line-height:1.55;background:var(--panel);border-bottom-left-radius:4px;white-space:pre-line}
 .harbor-app .msg.user .bubble{background:var(--ink);color:#fff;border-radius:18px;border-bottom-right-radius:4px}
 .harbor-app .msg.error .bubble{background:#fbeceb;color:#9e3434}
-.harbor-app .msg small{font-size:11px;color:var(--soft);padding:0 6px}
 .harbor-app .prompts{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:8px}
 .harbor-app .composer input:focus{border-color:#c9cfc6;background:#fff;box-shadow:0 0 0 4px #19241f0d}
 .harbor-app .toast{position:fixed;left:50%;bottom:28px;z-index:1000;transform:translate(-50%,20px);opacity:0;display:flex;align-items:center;gap:10px;max-width:min(560px,92vw);padding:12px 18px;border-radius:12px;background:var(--ink);color:#fff;font-size:14px;box-shadow:0 14px 40px #19241f40;transition:opacity .3s,transform .3s var(--ease);pointer-events:none}
@@ -360,16 +359,23 @@
 .harbor-app .send[disabled]{opacity:.45}
 .harbor-app .send .icon{width:17px;height:17px;transform:rotate(-90deg)}
 .harbor-app .chat-start .composer{width:min(680px,100%);padding:0}
-.harbor-app .think{display:grid;gap:6px;max-width:560px;padding:6px 2px}
 .harbor-app .shimmer{width:max-content;font-size:14.5px;font-weight:500;color:transparent;background:linear-gradient(90deg,#8f9a93 0%,#8f9a93 40%,var(--ink) 50%,#8f9a93 60%,#8f9a93 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;animation:shimmer 1.8s linear infinite}
 @keyframes shimmer{from{background-position:100% 0}to{background-position:-150% 0}}
-.harbor-app .think-text{margin:0;font-size:13px;line-height:1.55;color:var(--soft);white-space:pre-line;-webkit-mask-image:linear-gradient(transparent,#000 40%);mask-image:linear-gradient(transparent,#000 40%);max-height:4.7em;overflow:hidden}
-.harbor-app .thought{max-width:560px;font-size:12.5px;color:var(--soft)}
-.harbor-app .thought summary{cursor:pointer;list-style:none;width:max-content}
-.harbor-app .thought summary::-webkit-details-marker{display:none}
-.harbor-app .thought summary:after{content:' ›'}
-.harbor-app .thought[open] summary:after{content:' ⌄'}
-.harbor-app .thought p{margin:6px 0 4px;white-space:pre-line;line-height:1.55}
+.harbor-app .work{font-size:13px;line-height:1.5;color:var(--soft)}
+.harbor-app .work-summary{display:inline-flex;align-items:center;gap:4px;padding:3px 0;font:inherit;color:inherit;transition:color .15s}
+.harbor-app .work-summary:hover{color:var(--muted)}
+.harbor-app .work-summary+.work-lines{margin-top:4px}
+.harbor-app .work-line{display:flex;align-items:center;gap:8px;width:100%;min-width:0;padding:3px 0;font:inherit;color:inherit;text-align:left;animation:fade .3s var(--ease)}
+.harbor-app button.work-line:hover{color:var(--muted)}
+.harbor-app .work-line>.icon{flex:none;width:14px;height:14px}
+.harbor-app .work-text{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.harbor-app .work .chev{flex:none;width:12px;height:12px;transition:opacity .15s,transform .2s var(--ease)}
+.harbor-app .work-line .chev{opacity:0}
+.harbor-app button.work-line:hover .chev,.harbor-app .work-line.open .chev{opacity:1}
+.harbor-app .work-line.open .chev,.harbor-app .work-summary.open .chev{transform:rotate(90deg)}
+.harbor-app .work-detail{max-width:620px;margin:2px 0 6px 6px;padding:2px 0 2px 16px;border-left:1px solid var(--line);font-size:12.5px;line-height:1.6;white-space:pre-wrap;animation:fade .25s var(--ease)}
+.harbor-app .glow{color:transparent;background:linear-gradient(90deg,transparent,var(--ink),transparent) no-repeat,linear-gradient(var(--soft),var(--soft));background-size:40% 100%,100% 100%;-webkit-background-clip:text;background-clip:text;animation:glow 2.2s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes glow{from{background-position:-70% 0,0 0}80%,to{background-position:170% 0,0 0}}
 .harbor-app .bubble.md{white-space:normal}
 .harbor-app .bubble.md>*{margin:0}
 .harbor-app .bubble.md>*+*{margin-top:8px}

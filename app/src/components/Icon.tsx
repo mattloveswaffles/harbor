@@ -53,7 +53,9 @@ export type IconName =
   | 'external'
   | 'activity'
   | 'forward'
-  | 'search';
+  | 'search'
+  | 'chevron'
+  | 'thought';
 
 export function Icon({ name, className, style }: { name: IconName; className?: string; style?: CSSProperties }) {
   return (
@@ -1006,6 +1008,25 @@ export function IconSprite() {
           strokeWidth="1.5"
         />
         <path d="M9.4 9.4L14.6 14.6" stroke="currentColor" strokeWidth="1.5" />
+      </symbol>
+      <symbol id="i-thought" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M7.5 15C5.01 15 3 13.21 3 11C3 8.97 4.69 7.29 6.89 7.04C7.6 4.72 9.86 3 12.5 3C15.37 3 17.76 4.97 18.19 7.57C19.84 8.07 21 9.47 21 11.1C21 13.25 19.1 15 16.75 15H7.5Z"
+          stroke="currentColor"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
+        />
+        <circle cx="7.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="4.5" cy="21" r="0.75" fill="currentColor" />
+      </symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M9 6C9 6 15 10.4189 15 12C15 13.5812 9 18 9 18"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
+        />
       </symbol>
       <symbol id="i-search" viewBox="0 0 24 24" fill="none">
         <path

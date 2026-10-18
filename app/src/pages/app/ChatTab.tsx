@@ -8,6 +8,7 @@ import { mark } from '../../lib/assets.ts';
 import { getChat, saveChat } from '../../lib/session.ts';
 import type { ChatEvent, ChatTurn } from '../../lib/types.ts';
 import { ASK_KEY } from './labels.ts';
+import { type Step, Work } from './Work.tsx';
 
 const PROMPTS = [
   'When should I leave?',
@@ -29,27 +30,9 @@ const PUNS = [
 ];
 const PUN = PUNS[Math.floor(Math.random() * PUNS.length)];
 
-/** What each tool looks at, as "Checked …" and "Checking …". */
-const SOURCES: Record<string, string> = {
-  household: 'home',
-  household_details: 'household',
-  storm_status: 'storm',
-  weather_at_home: 'weather',
-  bank_accounts: 'bank',
-  connected_accounts: 'accounts',
-  investments: 'investments',
-  evacuation_plan: 'plan',
-  evacuation_guide: 'route',
-  evacuation_advice: 'advice',
-  regenerate_advice: 'advice',
-  bills: 'bills',
-  nearby_atms: 'ATMs',
-  nearby_sensors: 'sensors',
-};
-
 interface Turn extends ChatTurn {
-  sources?: string[];
-  thinking?: string;
+  steps?: Step[];
+  seconds?: number;
   error?: boolean;
 }
 
@@ -60,21 +43,40 @@ function failure(err: unknown): string {
   return 'Harbor couldn’t answer right now. Try again.';
 }
 
-/** The answer being written: thinking, the lookups so far and the text. */
+/** The answer being written: its steps so far, the text, and how long the work took once the text began. */
 interface Live {
-  thinking: string;
-  tools: string[];
+  steps: Step[];
   text: string;
+  seconds?: number;
 }
 
-function Thinking({ live }: { live: Live }) {
-  const tool = live.tools.at(-1);
-  return (
-    <div className="think">
-      <span className="shimmer">{tool ? `Checking your ${SOURCES[tool] ?? 'data'}…` : 'Thinking…'}</span>
-      {live.thinking && <p className="think-text">{live.thinking.slice(-280)}</p>}
-    </div>
-  );
+/** The answer with one more event in it: thinking joins the thought under way, a lookup starts a new step. */
+function advance(state: Live, e: ChatEvent, started: number): Live {
+  const last = state.steps.at(-1);
+  if (e.type === 'thinking') {
+    const thought = last && 'thinking' in last ? { thinking: last.thinking + e.text } : null;
+    return {
+      ...state,
+      steps: thought ? [...state.steps.slice(0, -1), thought] : [...state.steps, { thinking: e.text }],
+    };
+  }
+  // Text written before a lookup was the model thinking aloud
+  if (e.type === 'tool') {
+    const aloud = state.text.trim();
+    const steps: Step[] = !aloud
+      ? state.steps
+      : last && 'thinking' in last
+        ? [...state.steps.slice(0, -1), { thinking: `${last.thinking}\n\n${aloud}` }]
+        : [...state.steps, { thinking: aloud }];
+    return { steps: [...steps, { tool: e.name }], text: '' };
+  }
+  if (e.type === 'text')
+    return {
+      ...state,
+      text: state.text + e.text,
+      seconds: state.seconds ?? Math.max(1, Math.round((Date.now() - started) / 1000)),
+    };
+  return state;
 }
 
 function Message({ turn }: { turn: Turn }) {
@@ -87,16 +89,10 @@ function Message({ turn }: { turn: Turn }) {
   }
   return (
     <li className={`msg bot${turn.error ? ' error' : ''}`}>
-      {turn.thinking && (
-        <details className="thought">
-          <summary>Thought process</summary>
-          <p>{turn.thinking}</p>
-        </details>
-      )}
+      {turn.steps && <Work steps={turn.steps} working={false} seconds={turn.seconds} />}
       <div className="bubble md">
         <Markdown remarkPlugins={[remarkGfm]}>{turn.content}</Markdown>
       </div>
-      {turn.sources && turn.sources.length > 0 && <small>Checked {turn.sources.join(' · ')}</small>}
     </li>
   );
 }
@@ -117,16 +113,13 @@ export default function ChatTab() {
   const ask = async (question: string) => {
     const history = [...turns.filter((t) => !t.error), { role: 'user', content: question } as const];
     setTurns((t) => [...t, { role: 'user', content: question }]);
-    let state: Live = { thinking: '', tools: [], text: '' };
+    let state: Live = { steps: [], text: '' };
     setLive(state);
     let error: string | null = null;
+    const started = Date.now();
     const onEvent = (e: ChatEvent) => {
-      if (e.type === 'thinking') state = { ...state, thinking: state.thinking + e.text };
-      // Text written before a lookup was the model thinking aloud
-      else if (e.type === 'tool')
-        state = { thinking: `${state.thinking}${state.text}`, tools: [...state.tools, e.name], text: '' };
-      else if (e.type === 'text') state = { ...state, text: state.text + e.text };
-      else if (e.type === 'error') error = e.message;
+      if (e.type === 'error') error = e.message;
+      state = advance(state, e, started);
       setLive(state);
     };
     try {
@@ -137,12 +130,11 @@ export default function ChatTab() {
     } catch (err) {
       error = failure(err);
     }
-    const sources = [...new Set(state.tools.map((t) => SOURCES[t] ?? t))];
     setTurns((t) => [
       ...t,
       error || !state.text
         ? { role: 'assistant', content: error ?? failure(null), error: true }
-        : { role: 'assistant', content: state.text, sources, thinking: state.thinking.trim() || undefined },
+        : { role: 'assistant', content: state.text, steps: state.steps, seconds: state.seconds },
     ]);
     setLive(null);
   };
@@ -208,12 +200,11 @@ export default function ChatTab() {
           ))}
           {live && (
             <li className="msg bot">
-              {live.text ? (
+              <Work steps={live.steps} working={!live.text} seconds={live.seconds} />
+              {live.text && (
                 <div className="bubble md">
                   <Markdown remarkPlugins={[remarkGfm]}>{live.text}</Markdown>
                 </div>
-              ) : (
-                <Thinking live={live} />
               )}
             </li>
           )}

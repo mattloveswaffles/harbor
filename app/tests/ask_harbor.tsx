@@ -66,8 +66,15 @@ test('streams the answer as Markdown and shows what the agent checked and though
   await chat.send('How much cash do I have?');
   expect(chat.bubbles()).toEqual(['How much cash do I have?', 'You have $920 in cash.']);
   expect(chat.container.querySelector('.msg.bot .bubble strong')?.textContent).toBe('$920');
-  expect(chat.container.querySelector('.msg.bot small')?.textContent).toBe('Checked bank');
-  expect(chat.container.querySelector('.thought p')?.textContent).toBe('Look at the bank.Let me check.');
+  // The work sits above the answer, folded into one line that opens to each step
+  const work = chat.container.querySelector('.msg.bot > .work:first-child') as HTMLElement;
+  const lines = () => [...work.querySelectorAll('.work-line')].map((l) => l.textContent);
+  expect(work.querySelector('.work-summary')?.textContent).toMatch(/^Thought for \d+s$/);
+  expect(lines()).toEqual([]);
+  await act(async () => (work.querySelector('.work-summary') as HTMLButtonElement).click());
+  expect(lines()).toEqual(['Thought', 'Checked your bank']);
+  await act(async () => (work.querySelector('button.work-line') as HTMLButtonElement).click());
+  expect(work.querySelector('.work-detail')?.textContent).toBe('Look at the bank.\n\nLet me check.');
 
   await chat.send('Is that enough?');
   const body = JSON.parse(String(calls.at(-1)?.init?.body));
