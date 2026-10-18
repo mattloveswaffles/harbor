@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { api } from '../../lib/api.ts';
 import { getToken, setToken } from '../../lib/session.ts';
-import type { Health } from '../../lib/types.ts';
 import { Dashboard } from './Dashboard.tsx';
 import { Onboarding } from './Onboarding.tsx';
 import { ToastProvider } from './toast.tsx';
@@ -32,7 +31,7 @@ function Offline() {
 }
 
 export default function AppRoot() {
-  const [health, setHealth] = useState<Health | null | undefined>(undefined);
+  const [online, setOnline] = useState<boolean>();
   const [signedIn, setSignedIn] = useState(() => {
     tokenFromLink();
     return Boolean(getToken());
@@ -41,8 +40,8 @@ export default function AppRoot() {
   useEffect(() => {
     let current = true;
     api.health().then(
-      (h) => current && setHealth(h),
-      () => current && setHealth(null),
+      () => current && setOnline(true),
+      () => current && setOnline(false),
     );
     return () => {
       current = false;
@@ -54,16 +53,12 @@ export default function AppRoot() {
     setSignedIn(false);
   }, []);
 
-  if (!health) return <div className="harbor-app">{health === undefined ? <Loading page /> : <Offline />}</div>;
+  if (!online) return <div className="harbor-app">{online === undefined ? <Loading page /> : <Offline />}</div>;
   return (
     <div className="harbor-app">
       <ToastProvider>
         <title>Harbor</title>
-        {signedIn ? (
-          <Dashboard health={health} onSignedOut={signOut} />
-        ) : (
-          <Onboarding onSignedIn={() => setSignedIn(true)} />
-        )}
+        {signedIn ? <Dashboard onSignedOut={signOut} /> : <Onboarding onSignedIn={() => setSignedIn(true)} />}
       </ToastProvider>
     </div>
   );

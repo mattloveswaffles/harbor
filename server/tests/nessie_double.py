@@ -15,8 +15,6 @@ ACCOUNT_TYPES = ("Checking", "Savings", "Credit Card")
 
 
 class NessieDouble(Bank):
-    kind = "nessie"
-
     def __init__(self):
         self.customers: dict[str, dict] = {}
         self.accounts: dict[str, dict] = {}

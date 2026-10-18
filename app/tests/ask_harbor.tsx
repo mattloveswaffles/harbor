@@ -1,6 +1,6 @@
 // Ask Harbor: streams answers as Markdown, shows what the agent checked and thought, and handles errors.
 import { beforeEach, expect, test } from 'bun:test';
-import type { ChatEvent, Health } from '../src/lib/types.ts';
+import type { ChatEvent } from '../src/lib/types.ts';
 import { mockFetch, render, setupDom } from './support/dom.ts';
 
 setupDom('http://localhost:3000/app/chat');
@@ -9,22 +9,14 @@ const { default: ChatTab } = await import('../src/pages/app/ChatTab.tsx');
 const { DashboardContext } = await import('../src/pages/app/useHarbor.ts');
 type Dashboard = NonNullable<React.ContextType<typeof DashboardContext>>;
 
-const health = (chat: 'ok' | 'off') =>
-  ({ ok: true, mode: 'demo', nessie: 'ok', nhc: 'replay', ai: 'off', chat, clock: '' }) as Health;
-
 /** A streamed /me/chat answer. */
 const stream = (...events: ChatEvent[]) =>
   new Response(events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join(''), {
     headers: { 'Content-Type': 'text/event-stream' },
   });
 
-async function open(chat: 'ok' | 'off' = 'ok') {
-  const value = {
-    health: health(chat),
-    data: {},
-    act: async () => undefined,
-    reload: async () => undefined,
-  } as unknown as Dashboard;
+async function open() {
+  const value = { data: {}, act: async () => undefined } as unknown as Dashboard;
   const view = await render(
     <DashboardContext value={value}>
       <ChatTab />
@@ -100,7 +92,7 @@ test('errors show as errors and are not sent back as history', async () => {
 
 test('when chat is off on the server, sending says so', async () => {
   mockFetch(() => Response.json({ error: { code: 'chat_unavailable', message: 'x' } }, { status: 503 }));
-  const chat = await open('off');
+  const chat = await open();
   await chat.send('Hi');
   expect(chat.container.querySelector('.msg.error')?.textContent).toBe('Ask Harbor is off on this server.');
   await chat.unmount();

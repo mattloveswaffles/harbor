@@ -22,8 +22,7 @@ from harbor import connections, profile
 from harbor.ai.llm import TIME_BUDGET_S
 from harbor.ai.llm import model as llm_model
 from harbor.clock import iso
-from harbor.context import household_of, storm_inputs
-from harbor.evac.guide import build_guide
+from harbor.context import guide_for, storm_inputs
 from harbor.models import Advice, User
 from harbor.planning import active_plan, plan_moves
 from harbor.provisioning import user_accounts
@@ -65,19 +64,7 @@ def facts(app, session: Session, user: User, now: datetime) -> dict:
     """Everything the advice is built from, as plain JSON."""
     prof = profile.load(session, user)
     storm = storm_inputs(app, user, now)
-    bundle = build_guide(
-        now,
-        (user.lat, user.lon),
-        user.zip,
-        household_of(session, user),
-        cone=storm["cone"],
-        track=storm["track"],
-        category=storm["category"],
-        ts_winds_eta=storm["eta"],
-        demo=storm["replay"],
-        ors_key=app.state.settings.ors_api_key,
-        choose=profile.choice(session, user),
-    )
+    bundle = guide_for(app, session, user, now)
     guide = bundle["guide"]
     linked = connections.connections(session, user.id)
     linked_ids = {i for c in linked.values() for i in c.account_ids or []}
@@ -191,7 +178,7 @@ def _start(app, session: Session, user: User, f: dict, now: datetime) -> Advice:
     return row
 
 
-def _payload(app, row: Advice, f: dict) -> dict:
+def _payload(row: Advice, f: dict) -> dict:
     return {
         "status": row.status,
         "error": row.error,
@@ -212,7 +199,7 @@ def regenerate(app, session: Session, user: User) -> dict:
     row = session.get(Advice, user.id)
     if row is None or row.status != "running":
         row = _start(app, session, user, f, now)
-    return _payload(app, row, f)
+    return _payload(row, f)
 
 
 def current(app, session: Session, user: User) -> dict:
@@ -222,4 +209,4 @@ def current(app, session: Session, user: User) -> dict:
     row = session.get(Advice, user.id)
     if row is None or (row.status != "running" and row.inputs_hash != inputs_hash(f)):
         row = _start(app, session, user, f, now)
-    return _payload(app, row, f)
+    return _payload(row, f)

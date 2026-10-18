@@ -6,7 +6,6 @@ Catches up across clock jumps by evaluating every change point since the last ti
 from __future__ import annotations
 
 import threading
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import lru_cache
 
@@ -37,14 +36,6 @@ def forecast_source(app) -> ReplaySource | None:
 def sensor_source(storm: str) -> SensorSource | None:
     """Recorded sensors for a replayed storm (data/sensors/<storm>/), or None if none were recorded."""
     return SensorSource(storm) if (SENSOR_DATA / storm).is_dir() else None
-
-
-def replay_end(source: ReplaySource | None) -> datetime | None:
-    """Replay end: when the sensor recording ends, since rivers flood for days after the last advisory."""
-    if source is None:
-        return None
-    sensors = sensor_source(source.root.name)
-    return max(source.end, sensors.end) if sensors and sensors.end else source.end
 
 
 def sensor_facts(source: ReplaySource | None, lat: float, lon: float, now: datetime) -> dict:
@@ -219,43 +210,13 @@ def reset_cursor(app) -> None:
         app.state.tick_cursor = None
 
 
-def first_time_at(app, target: Level, until: datetime) -> datetime | None:
-    """First moment in (now, until] when some user reaches `target`. A dry run: nothing is written."""
-    source = forecast_source(app)
-    if source is None:
-        return None
-    now = app.state.clock.now()
-    with Session(app.state.engine) as session:
-        users = [(Level(u.risk_level), u.lat, u.lon, u.zip) for u in session.exec(select(User)).all()]
-    if any(level == target for level, *_ in users):
-        return now
-    levels = [u[0] for u in users]
-    for t in steps_between(source, now, until):
-        if t <= now:
-            continue
-        for i, (_, lat, lon, zip_code) in enumerate(users):
-            decision, _ = evaluate(source, levels[i], lat, lon, zip_code, t)
-            levels[i] = decision.level
-            if decision.level == target:
-                return t
-    return None
-
-
 async def _scheduled_catch_up(app) -> None:
     from harbor.executor import catch_up
 
     await catch_up(app, app.state.clock.now())
 
 
-@dataclass
-class Scheduler:
-    scheduler: AsyncIOScheduler
-
-    def shutdown(self) -> None:
-        self.scheduler.shutdown(wait=False)
-
-
-def start_scheduler(app) -> Scheduler:
+def start_scheduler(app) -> AsyncIOScheduler:
     settings = app.state.settings
     seconds = settings.tick_seconds or (2 if settings.harbor_mode == "demo" else 60)
     sched = AsyncIOScheduler(timezone="UTC")
@@ -264,4 +225,4 @@ def start_scheduler(app) -> Scheduler:
         _scheduled_catch_up, "interval", seconds=seconds, args=[app], id="tick", max_instances=1, coalesce=True
     )
     sched.start()
-    return Scheduler(sched)
+    return sched

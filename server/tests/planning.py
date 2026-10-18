@@ -19,8 +19,9 @@ from harbor.engine.plan import (
     lodging_line,
 )
 from harbor.evac.household import Household, Pet, budget_lines
-from harbor.models import Event
+from harbor.models import Event, Move, Plan
 from harbor.sources.market import FixturePrices
+from tests.conftest import advance
 
 UTC = UTC
 
@@ -246,12 +247,10 @@ def test_cancel_window_moves_the_approval_deadline_earlier():
     assert deadline == utc(2024, 10, 7, 17, 45)
 
 
-def test_too_late_returns_none_and_flags_arrives_late():
+def test_too_late_returns_none():
     now = utc(2024, 10, 7, 20, 30)  # Monday after the cutoff
     need = utc(2024, 10, 8, 18)
     assert cal.latest_safe_approval_at(need, now, timedelta(0)) is None
-    assert cal.arrives_late(now, need) is True
-    assert cal.arrives_late(utc(2024, 10, 6, 15), need) is False
 
 
 def test_settlement_skips_weekends_and_bank_holidays():
@@ -343,7 +342,7 @@ def test_full_storm_with_real_bank_writes(client, auth, app, maria):
         == "approved"
     )
 
-    client.post(f"{API}/demo/advance", json={"to_risk": "shelter"})
+    advance(client, to_risk="shelter")
     plan = client.get(f"{API}/me/plan", headers=auth).json()["plan"]
     assert plan["status"] == "complete"
     money = [m for m in plan["moves"] if m["kind"] in ("transfer", "sell_etf", "withdraw_cash")]
@@ -355,9 +354,9 @@ def test_full_storm_with_real_bank_writes(client, auth, app, maria):
     assert b["checking"] >= gathered - cash["amount_cents"] - 100 * len(money)  # whole-dollar rounding
 
     # Alerts end on 10 Oct, but the river holds recovery until Sunday evening.
-    client.post(f"{API}/demo/advance", json={"to_risk": "recover"})
+    advance(client, to_risk="recover")
     assert client.get(f"{API}/me/storm", headers=auth).json()["risk_level"] == "recover"
-    client.post(f"{API}/demo/advance", json={"hours": 2})
+    advance(client, hours=2)
     assert client.get(f"{API}/me/storm", headers=auth).json()["risk_level"] == "clear"
     b2 = balances(client, auth)
     assert b2["checking"] == 42_000  # back to where it was before the plan
@@ -380,9 +379,9 @@ def test_full_storm_with_real_bank_writes(client, auth, app, maria):
 
 def test_approving_at_shelter_moves_nothing_until_recovery(client, auth):
     start(client, auth)
-    client.post(f"{API}/demo/advance", json={"to_risk": "shelter"})
+    advance(client, to_risk="shelter")
     client.post(f"{API}/me/plan/approve", headers=auth, json={"plan_version": 1})
-    client.post(f"{API}/demo/advance", json={"hours": 6})
+    advance(client, hours=6)
     plan = client.get(f"{API}/me/plan", headers=auth).json()["plan"]
     assert all(m["status"] in ("scheduled", "cancelled") for m in plan["moves"])
     assert balances(client, auth)["savings"] == 50_000  # no bank writes during landfall
@@ -399,46 +398,33 @@ def test_approve_checks_version_and_status(client, auth):
     assert again.status_code == 409 and again.json()["error"]["code"] == "plan_not_awaiting_approval"
 
 
-def test_cancel_one_move_inside_its_window(client, auth):
-    plan = start(client, auth)
-    client.post(f"{API}/me/plan/approve", headers=auth, json={"plan_version": 1})
-    sale = next(m for m in plan["moves"] if m["kind"] == "sell_etf")
-    res = client.post(f"{API}/me/plan/moves/{sale['id']}/cancel", headers=auth)
-    assert res.status_code == 200
-    assert next(m for m in res.json()["plan"]["moves"] if m["id"] == sale["id"])["status"] == "cancelled"
-    transfer = plan["moves"][0]
-    client.post(f"{API}/demo/advance", json={"hours": 3})  # the transfer has run
-    late = client.post(f"{API}/me/plan/moves/{transfer['id']}/cancel", headers=auth)
-    assert late.status_code == 409 and late.json()["error"]["code"] == "move_already_running"
-
-
 def test_cancelling_the_plan_puts_money_back(client, auth):
     start(client, auth)
     client.post(f"{API}/me/plan/approve", headers=auth, json={"plan_version": 1})
-    client.post(f"{API}/demo/advance", json={"hours": 3})  # savings moved, cash withdrawn
+    advance(client, hours=3)  # savings moved, cash withdrawn
     assert balances(client, auth)["savings"] == 0
     assert client.post(f"{API}/me/plan/cancel", headers=auth).json()["plan"]["status"] == "restoring"
-    client.post(f"{API}/demo/advance", json={"hours": 1})
+    advance(client, hours=1)
     b = balances(client, auth)
     assert b["checking"] == 42_000 and b["savings"] > 0
 
 
-def test_storm_turning_away_expires_an_unapproved_plan(client):
+def test_storm_turning_away_expires_an_unapproved_plan(client, app):
     # Live Oak, inland north Florida: prepare on Monday, then the storm turns away on Wednesday.
-    user = client.post(f"{API}/users", json={"name": "Sam Rivera", "zip": "32060"}).json()
-    h = {"X-User-Id": user["id"]}
+    body = {"name": "Sam Rivera", "email": "sam@example.com", "password": "correct horse battery", "zip": "32060"}
+    res = client.post(f"{API}/auth/signup", json=body).json()
+    h = {"Authorization": f"Bearer {res['token']}"}
     client.post(f"{API}/demo/start")
-    client.post(f"{API}/demo/advance", json={"to_risk": "prepare"})
+    advance(client, to_risk="prepare")
     assert client.get(f"{API}/me/plan", headers=h).json()["plan"]["status"] == "awaiting_approval"
-    client.post(f"{API}/demo/advance", json={"to": "next_advisory"})
-    for _ in range(12):
+    for _ in range(13):
         if client.get(f"{API}/me/storm", headers=h).json()["risk_level"] == "monitor":
             break
-        client.post(f"{API}/demo/advance", json={"hours": 6})
+        advance(client, hours=6)
     assert client.get(f"{API}/me/storm", headers=h).json()["risk_level"] == "monitor"
     assert client.get(f"{API}/me/plan", headers=h).json()["plan"] is None
-    past = client.get(f"{API}/me/plans", headers=h).json()["plans"]
-    assert past[0]["status"] == "expired"
+    with Session(app.state.engine) as s:
+        assert s.exec(select(Plan.status).where(Plan.user_id == res["user"]["id"])).one() == "expired"
 
 
 def test_bill_shield_moves_marias_bill_in_nessie(client, auth, bank):
@@ -449,33 +435,31 @@ def test_bill_shield_moves_marias_bill_in_nessie(client, auth, bank):
     assert shield["requires_explicit_approval"] and shield["extra"]["to_date"] > "2024-10-13"
     assert client.get(f"{API}/me/bills", headers=auth).json()[0]["in_storm_window"]
     client.post(f"{API}/me/plan/approve", headers=auth, json={"plan_version": 1})
-    client.post(f"{API}/demo/advance", json={"hours": 3})
+    advance(client, hours=3)
     bill = client.get(f"{API}/me/bills", headers=auth).json()[0]
     assert bill["deferred"] and bill["due_date"] == shield["extra"]["to_date"]
     assert bank.bills[bill["nessie_id"]]["payment_date"] == shield["extra"]["to_date"]  # really moved in Nessie
 
 
-def test_rebuy_after_the_storm_when_opted_in(client, auth):
+def test_rebuy_after_the_storm_when_opted_in(client, auth, app):
     client.patch(f"{API}/me", headers=auth, json={"settings": {"rebuy_opt_in": True}})
     start(client, auth)
     client.post(f"{API}/me/plan/approve", headers=auth, json={"plan_version": 1})
-    client.post(f"{API}/demo/advance", json={"to_risk": "recover"})
+    advance(client, to_risk="recover")
     plan = client.get(f"{API}/me/plan", headers=auth).json()["plan"]
     rebuys = [m for m in plan["moves"] if m["kind"] == "rebuy_etf"]
     assert rebuys and all(m["requires_explicit_approval"] for m in rebuys)
-    client.post(f"{API}/demo/advance", json={"hours": 24 * 2})  # Sunday evening -> Monday's market open
-    plan_after = client.get(f"{API}/me/plans", headers=auth).json()["plans"][0]
-    done = [m for m in plan_after["moves"] if m["kind"] == "rebuy_etf"]
-    assert done and all(m["status"] == "done" for m in done)
+    advance(client, hours=24 * 2)  # Sunday evening -> Monday's market open
+    with Session(app.state.engine) as s:
+        done = s.exec(select(Move).where(Move.kind == "rebuy_etf")).all()
+    assert done and all(m.status == "done" for m in done)
     symbols = {h["symbol"] for h in client.get(f"{API}/me/portfolio", headers=auth).json()["holdings"]}
-    assert {m["symbol"] for m in done} <= symbols
+    assert {m.symbol for m in done} <= symbols
     assert balances(client, auth)["brokerage_cash"] == 0
 
 
-def test_demo_clock_waits_for_approval(client, auth):
+def test_demo_clock_waits_for_approval(client, auth, clock):
     start(client, auth)  # Maria reaches act at the replay start, so a plan is waiting
-    clock = client.get(f"{API}/demo/clock").json()
-    assert clock["running"] is False and clock["paused_reason"] == "awaiting_approval"
+    assert not clock.running and clock.paused_reason == "awaiting_approval"
     client.post(f"{API}/me/plan/approve", headers=auth, json={"plan_version": 1})
-    clock = client.get(f"{API}/demo/clock").json()
-    assert clock["running"] is True and clock["paused_reason"] is None
+    assert clock.running and clock.paused_reason is None

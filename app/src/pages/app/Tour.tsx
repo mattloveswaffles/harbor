@@ -1,41 +1,41 @@
-// First-run tour: each guide explains one part of the app while the dashboard shows that tab behind it.
+// First-run tour: a Storm Dude explains each part of the app while the dashboard shows that tab behind it.
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Icon } from '../../components/Icon.tsx';
-import { Character, type CharacterName } from './Characters.tsx';
+import { dudes } from '../../lib/assets.ts';
 
-const STEPS: { guide: CharacterName; name: string; tab: string; title: string; text: string }[] = [
+const STEPS: { dude: keyof typeof dudes; name: string; tab: string; title: string; text: string }[] = [
   {
-    guide: 'sunny',
-    name: 'Sunny',
+    dude: 'rumble',
+    name: 'Rumble',
     tab: '/app/weather',
-    title: 'Hi, I’m Sunny.',
+    title: 'Hi, I’m Rumble.',
     text: 'Harbor watches every hurricane forecast for your home. When one is coming, we get you out in time and make sure you can pay for it.',
   },
   {
-    guide: 'bea',
-    name: 'Bea',
+    dude: 'nimbus',
+    name: 'Nimbus',
     tab: '/app/accounts',
     title: 'Your money, read-only.',
     text: 'Connect your bank through Nessie. Harbor reads balances to price your trip. Nothing moves until you approve a plan.',
   },
   {
-    guide: 'rory',
-    name: 'Rory',
+    dude: 'foggy',
+    name: 'Foggy',
     tab: '/app/route',
     title: 'Your way out.',
     text: 'When to leave, where to go and which shelters take pets. The map follows the forecast cone as it changes.',
   },
   {
-    guide: 'pip',
-    name: 'Pip',
+    dude: 'squall',
+    name: 'Squall',
     tab: '/app',
     title: 'One tap to approve.',
     text: 'I add up gas, a room, food and the dog, then line up the money from savings and investments. You approve it in one tap.',
   },
   {
-    guide: 'echo',
-    name: 'Echo',
+    dude: 'twirl',
+    name: 'Twirl',
     tab: '/app/chat',
     title: 'Ask me anything.',
     text: 'Questions about your storm, money or route? I answer from your own data, any time.',
@@ -64,8 +64,10 @@ export function Tour({ onClose }: { onClose: () => void }) {
   if (!step) return null;
   return (
     <div className="tour" role="dialog" aria-modal="true" aria-labelledby="tour-title">
-      <div className="tour-card" key={step.guide}>
-        <Character name={step.guide} />
+      <div className="tour-card" key={step.dude}>
+        <div className="tour-art">
+          <img src={dudes[step.dude]} alt="" />
+        </div>
         <div className="tour-body">
           <span className="tour-name">{step.name}</span>
           <h2 id="tour-title">{step.title}</h2>
@@ -73,7 +75,7 @@ export function Tour({ onClose }: { onClose: () => void }) {
           <div className="tour-actions">
             <div className="tour-dots" role="img" aria-label={`Step ${i + 1} of ${STEPS.length}`}>
               {STEPS.map((s, n) => (
-                <span key={s.guide} className={n === i ? 'on' : undefined} />
+                <span key={s.dude} className={n === i ? 'on' : undefined} />
               ))}
             </div>
             {!last && (

@@ -5,7 +5,7 @@ import { brands, dudes } from '../../lib/assets.ts';
 import { money, moneyRound, when } from '../../lib/format.ts';
 import type { Plan } from '../../lib/types.ts';
 import { MOVE_STATUS, moveLabel, planStatus } from './labels.ts';
-import { ActionButton, Quiet } from './ui.tsx';
+import { ActionButton, ApproveButton, Quiet } from './ui.tsx';
 import { type HarborData, useDashboard } from './useHarbor.ts';
 
 function Fund({ d }: { d: HarborData }) {
@@ -20,11 +20,12 @@ function Fund({ d }: { d: HarborData }) {
     : [];
   const used = parts.filter(([, cents]) => cents > 0);
   const total = plan?.budget.total_cents ?? d.advice?.facts.trip_total_cents ?? 0;
+  const [status, tone] = plan ? planStatus(plan) : [];
   return (
     <section className="card fund">
       <h2>
         Evacuation fund
-        {plan && <span className={`tag ${planStatus(plan)[1]}`}>{planStatus(plan)[0]}</span>}
+        {plan && <span className={`tag ${tone}`}>{status}</span>}
       </h2>
       <div className="fund-big">
         <strong>{moneyRound(total)}</strong>
@@ -128,7 +129,7 @@ function Budget({ d }: { d: HarborData }) {
         {lines.map((l) => (
           <div key={l.label} className="bline">
             <span>{l.label}</span>
-            <i style={{ ['--w' as string]: `${(l.amount_cents / top) * 100}%` }} />
+            <i style={{ '--w': `${(l.amount_cents / top) * 100}%` }} />
             <strong>{moneyRound(l.amount_cents)}</strong>
           </div>
         ))}
@@ -161,12 +162,7 @@ function Moves({ plan }: { plan: Plan }) {
           </div>
         );
       })}
-      {plan.status === 'awaiting_approval' && (
-        <ActionButton className="btn" action={() => api.approve(plan.version)} done="Plan approved.">
-          Approve {moneyRound(plan.budget.total_cents)}
-          <Icon name="arrow" />
-        </ActionButton>
-      )}
+      {plan.status === 'awaiting_approval' && <ApproveButton plan={plan} done="Plan approved." />}
       {['approved', 'running'].includes(plan.status) && (
         <ActionButton className="btn ghost" action={api.cancelPlan} done="Remaining steps cancelled.">
           Cancel remaining steps

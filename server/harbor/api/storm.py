@@ -6,8 +6,9 @@ from harbor.clock import iso
 from harbor.context import evacuation_for, sensors_for
 from harbor.deps import ClockDep, SessionDep, UserDep
 from harbor.engine.risk import MONITOR_P34
+from harbor.geo import feature_collection, point
 from harbor.schemas import MapOut, StormStatusOut
-from harbor.sources.forecast import empty_fc
+from harbor.sources.forecast import Exposure
 from harbor.ticker import forecast_source
 
 router = APIRouter(tags=["storm"])
@@ -22,8 +23,8 @@ def get_storm(request: Request, user: UserDep, clock: ClockDep) -> dict:
     """Risk level (last tick) and the forecast at the home now; `storm` is null when nothing threatens."""
     now = clock.now()
     source = forecast_source(request.app)
-    exp = source.exposure(user.lat, user.lon, user.zip, now) if source else None
-    adv = exp.advisory if exp else None
+    exp = source.exposure(user.lat, user.lon, user.zip, now) if source else Exposure(None)
+    adv = exp.advisory
     threatens = adv is not None and (user.risk_level != "clear" or exp.in_cone or exp.p34 >= MONITOR_P34 or exp.alerts)
     storm = None
     if threatens:
@@ -36,29 +37,17 @@ def get_storm(request: Request, user: UserDep, clock: ClockDep) -> dict:
             "advisory_number": adv.advisory_number,
             "advisory_time": iso(adv.issued_at),
             "next_advisory_time": iso(nxt) if nxt and nxt < source.end else None,
-            "is_replay": source.is_replay,
+            "is_replay": True,
             "headline": adv.headline,
             "position": {"lat": adv.lat, "lon": adv.lon},
             "max_wind_mph": adv.max_wind_mph,
         }
-    at_zip = (
-        exp.out()
-        if exp
-        else {
-            "ts_wind_probability_5day": 0.0,
-            "hurricane_wind_probability_5day": 0.0,
-            "in_forecast_cone": False,
-            "earliest_ts_winds_eta": None,
-            "eta_source": None,
-            "alerts": [],
-        }
-    )
     return {
         "server_time": iso(now),
         "risk_level": user.risk_level,
         "risk_reason": user.risk_reason or NO_STORM,
         "storm": storm,
-        "at_your_zip": at_zip,
+        "at_your_zip": exp.out(),
     }
 
 
@@ -67,41 +56,30 @@ def get_map(request: Request, session: SessionDep, user: UserDep, clock: ClockDe
     """Every map layer as GeoJSON ([lon, lat]); evacuation layers appear from prepare."""
     now = clock.now()
     source = forecast_source(request.app)
-    home = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "geometry": {"type": "Point", "coordinates": [user.lon, user.lat]},
-                "properties": {"id": "home", "label": "Home", "zip": user.zip, "location_source": user.location_source},
-            }
-        ],
-    }
     layers = {
-        "home": home,
-        "cone": source.cone_layer(now) if source else empty_fc(),
-        "track": source.track_layer(now) if source else empty_fc(),
-        **{name: empty_fc() for name in EMPTY_LAYERS},
+        "home": feature_collection(
+            [point(user.lat, user.lon, id="home", label="Home", zip=user.zip, location_source=user.location_source)]
+        ),
+        "cone": source.cone_layer(now) if source else feature_collection([]),
+        "track": source.track_layer(now) if source else feature_collection([]),
+        **{name: feature_collection([]) for name in EMPTY_LAYERS},
     }
     sensors = sensors_for(request.app)
     if sensors:
-        layers["sensors"] = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "geometry": {"type": "Point", "coordinates": [r.station.lon, r.station.lat]},
-                    "properties": {
-                        "id": r.station.id,
-                        "source": r.station.source,
-                        "label": r.station.name,
-                        "status": "stale" if r.stale else r.status,
-                        "distance_miles": r.distance_miles,
-                    },
-                }
+        layers["sensors"] = feature_collection(
+            [
+                point(
+                    r.station.lat,
+                    r.station.lon,
+                    id=r.station.id,
+                    source=r.station.source,
+                    label=r.station.name,
+                    status="stale" if r.stale else r.status,
+                    distance_miles=r.distance_miles,
+                )
                 for r in sensors.readings(now, user.lat, user.lon)
-            ],
-        }
+            ]
+        )
     bundle = evacuation_for(request.app, session, user, now)
     if bundle:
         layers.update({name: bundle["layers"][name] for name in EVAC_LAYERS})

@@ -35,5 +35,9 @@ export const brands = {
   zelle,
 };
 
+/** The shore behind the homepage hero, sign-in and onboarding. */
+export const shorePhoto =
+  'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=2200&q=80';
+
 /** The Storm Dudes (Harbor palette). */
 export const dudes = { flurry, foggy, gust, nimbus, plip, rumble, squall, twirl, zip };

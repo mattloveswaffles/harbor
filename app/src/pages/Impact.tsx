@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon.tsx';
+import { DOCS } from '../components/SiteLayout.tsx';
 import { Waffle } from '../components/Waffle.tsx';
 
 export default function Impact() {
@@ -18,7 +19,7 @@ export default function Impact() {
               See a plan
               <Icon name="arrow" />
             </Link>
-            <a className="button light" href="https://github.com/mattloveswaffles/harbor/blob/main/docs/Harbor.pptx">
+            <a className="button light" href={`${DOCS}/Harbor.pptx`}>
               Pitch deck
               <Icon name="arrow" />
             </a>

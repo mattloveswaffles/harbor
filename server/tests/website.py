@@ -31,7 +31,7 @@ def test_assets(site):
 
 def test_api_still_wins(site):
     assert site.get("/health").json()["ok"] is True
-    assert site.get("/api/v1/demo/clock").status_code == 200
+    assert site.post("/api/v1/demo/reset").status_code == 200
     assert site.get("/api/v1/nope").status_code == 404
 
 

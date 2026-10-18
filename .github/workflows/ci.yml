@@ -42,11 +42,9 @@ jobs:
           key: bun-${{ hashFiles('app/bun.lock') }}
       - run: cd app && bun install --frozen-lockfile
       - run: make check-app
-      - if: github.ref == 'refs/heads/main'
-        run: make build
         env:
           HARBOR_BASE_PATH: /${{ github.event.repository.name }}
-          HARBOR_API_URL: ${{ vars.HARBOR_API_URL }} # optional: a deployed Harbor server
+          HARBOR_API_URL: https://hyperion.tail62ffe0.ts.net # the Harbor server the Pages site calls
       - if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:

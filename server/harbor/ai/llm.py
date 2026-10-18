@@ -1,7 +1,7 @@
 """The one LLM behind every agent (Ask Harbor and the advisor): OpenRouter through Pydantic AI.
 
 OPENROUTER_API_KEY and LLM_MODEL configure it. LLM_MODEL is a comma-separated list: the first model answers,
-the rest take over when it fails. The demo AI toggle turns every agent off; tests set app.state.llm_model.
+the rest take over when it fails. Tests set app.state.llm_model.
 """
 
 from __future__ import annotations
@@ -15,10 +15,8 @@ TIME_BUDGET_S = 90.0  # per answer; free models are slow
 
 
 def model(app) -> Model | None:
-    """The configured model, made once per app; None without a key or with the AI toggle off."""
-    if not getattr(app.state, "ai_enabled", True):
-        return None
-    if getattr(app.state, "llm_model", None) is None:
+    """The configured model, made once per app; None without a key."""
+    if app.state.llm_model is None:
         settings = app.state.settings
         key = settings.openrouter_api_key.get_secret_value()
         if not key:

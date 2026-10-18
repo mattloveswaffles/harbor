@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { AddressForm } from '../components/AddressForm.tsx';
 import { Icon } from '../components/Icon.tsx';
-import { brands, dudes, mark } from '../lib/assets.ts';
+import { brands, dudes, mark, shorePhoto } from '../lib/assets.ts';
 
 export default function Home() {
   return (
@@ -22,11 +22,7 @@ export default function Home() {
 
       <section className="container">
         <div className="stage hero-stage" data-reveal>
-          <img
-            className="stage-photo"
-            src="https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=2200&q=80"
-            alt=""
-          />
+          <img className="stage-photo" src={shorePhoto} alt="" />
           <div
             className="app"
             role="img"

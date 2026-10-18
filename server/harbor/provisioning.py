@@ -58,7 +58,7 @@ async def ensure_customer(bank: Bank, user: User) -> str:
     address = {
         "street_number": "1",
         "street_name": "Harbor Way",
-        "city": (lookup_zip(user.zip) or {}).get("city", "Unknown"),
+        "city": lookup_zip(user.zip)["city"],
         "state": "FL",
         "zip": user.zip,
     }

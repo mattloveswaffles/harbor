@@ -1,29 +1,27 @@
 #!/usr/bin/env bash
-# Seed a household into a storm, then open Harbor signed in as them.
+# Seed the demo household into a storm, then open Harbor signed in as it.
 #
-# Signs up Maria Lopez (Tampa: two adults, a child, a dog, a minivan), saves her household profile, connects
-# Chase and Robinhood through Nessie, and starts the Hurricane Milton scenario. Harbor, and its AI, then plan
-# for the storm. Without this script Harbor runs normally, on real time, with no storm.
+# The demo account signs in with demo / 1111. The first run creates it: Maria Lopez in Tampa (two adults, a child,
+# a dog, a minivan), her household profile, and Chase and Robinhood connected through Nessie. Later runs reset its
+# money and plans. Then it starts the Hurricane Milton scenario, and Harbor, and its AI, plan for the storm.
+# Without this script Harbor runs normally, on real time, with no storm.
 #
-#   ./seed.sh                        # against http://localhost:3000
-#   ./seed.sh https://harbor.example # another server (it must run with HARBOR_MODE=demo)
+#   ./seed.sh                                   # the server at http://localhost:3000
+#   ./seed.sh https://api.example               # another server (it must run with HARBOR_MODE=demo)
+#   ./seed.sh https://api.example https://site  # and open the app on a separately hosted site (GitHub Pages)
 set -euo pipefail
 
 BASE="${1:-http://localhost:3000}"
+SITE="${2:-$BASE}"
 API="$BASE/api/v1"
-STAMP="$(date +%s)"
-EMAIL="maria.$STAMP@example.com"
-PASSWORD="harbor-$STAMP"
+LOGIN='{"email":"demo","password":"1111"}'
 
 post() { curl -fsS -X "$1" "$API$2" -H 'Content-Type: application/json' "${@:3}"; }
+token() { sed -n 's/.*"token":"\([^"]*\)".*/\1/p'; }
 
-echo "Signing up $EMAIL"
-SIGNUP=$(post POST /auth/signup -d "{\"name\":\"Maria Lopez\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"zip\":\"33602\"}")
-TOKEN=$(printf '%s' "$SIGNUP" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
-AUTH=(-H "Authorization: Bearer $TOKEN")
-
-echo "Saving the household"
-post PUT /me/profile "${AUTH[@]}" -o /dev/null -d @- <<'JSON'
+household() {
+  echo "Saving the household"
+  post PUT /me/profile "${AUTH[@]}" -o /dev/null -d @- <<'JSON'
 {
   "personal": {"name": "Maria Lopez", "dob": "1987-03-14", "phone": "(813) 555-0142"},
   "home": {"address": "412 E Madison St, Tampa, FL 33602", "home_type": "house", "evac_zone": "A"},
@@ -48,18 +46,29 @@ post PUT /me/profile "${AUTH[@]}" -o /dev/null -d @- <<'JSON'
   "contacts": [{"name": "Rosa Lopez", "relation": "sister", "phone": "(478) 555-0199", "gets_plan": true}]
 }
 JSON
+  for bank in chase robinhood; do
+    echo "Connecting $bank through Nessie"
+    post POST "/me/connections/$bank" "${AUTH[@]}" -o /dev/null
+  done
+}
 
-for bank in chase robinhood; do
-  echo "Connecting $bank through Nessie"
-  post POST "/me/connections/$bank" "${AUTH[@]}" -o /dev/null
-done
+if SIGNED_IN=$(post POST /auth/login -d "$LOGIN" 2>/dev/null); then
+  TOKEN=$(printf '%s' "$SIGNED_IN" | token)
+  echo "Resetting the demo household's money and plans"
+  post POST /demo/reset -o /dev/null
+else
+  echo "Creating the demo account"
+  TOKEN=$(post POST /auth/signup -d '{"name":"Maria Lopez","email":"demo","password":"1111","zip":"33602"}' | token)
+  AUTH=(-H "Authorization: Bearer $TOKEN")
+  household
+fi
 
 echo "Starting the Hurricane Milton scenario"
 post POST /demo/start -o /dev/null
 
-URL="$BASE/app#token=$TOKEN"
+URL="$SITE/app#token=$TOKEN"
 echo
-echo "Signed in as $EMAIL (password: $PASSWORD)"
+echo "Signed in as demo (password: 1111)"
 echo "$URL"
 case "$(uname -s)" in
   Darwin) open "$URL" ;;

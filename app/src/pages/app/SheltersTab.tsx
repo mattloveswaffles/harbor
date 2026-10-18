@@ -1,11 +1,11 @@
 // Shelters: the best match for the household, the list and a map whose pins follow the list.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { Icon } from '../../components/Icon.tsx';
 import { dudes } from '../../lib/assets.ts';
 import type { Shelter } from '../../lib/types.ts';
 import { shelterMap } from './harborMap.ts';
-import { Quiet, ZoomButtons } from './ui.tsx';
+import { Quiet, useMap, ZoomButtons } from './ui.tsx';
 import { useDashboard } from './useHarbor.ts';
 
 const FILTERS = {
@@ -77,18 +77,7 @@ function ShelterList({ all }: { all: Shelter[] }) {
   const shelters = all.filter(
     (s) => on.every((f) => FILTERS[f][1](s)) && (!q || `${s.name} ${where(s)}`.toLowerCase().includes(q)),
   );
-  const el = useRef<HTMLDivElement>(null);
-  const map = useRef<ReturnType<typeof shelterMap>>(null);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the map is made once; `pick` only sets state
-  useEffect(() => {
-    if (!el.current) return;
-    map.current = shelterMap(el.current, (i) => pick(i));
-    return () => {
-      map.current?.remove();
-      map.current = null;
-    };
-  }, []);
+  const { el, map } = useMap((host) => shelterMap(host, (i) => pick(i)));
   // biome-ignore lint/correctness/useExhaustiveDependencies: redraw when the filtered list changes
   useEffect(() => {
     map.current?.draw(data.user.location, shelters);

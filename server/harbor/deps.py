@@ -1,10 +1,11 @@
-"""FastAPI dependencies: session, clock, bank, settings and the X-User-Id user."""
+"""FastAPI dependencies: session, clock, bank, settings and the logged-in user."""
 
 from typing import Annotated
 
 from fastapi import Depends, Header, Request
 from sqlmodel import Session
 
+from harbor.auth import user_for_token
 from harbor.bank import Bank, get_bank
 from harbor.clock import Clock, get_clock
 from harbor.config import Settings
@@ -23,35 +24,24 @@ BankDep = Annotated[Bank, Depends(get_bank)]
 SettingsDep = Annotated[Settings, Depends(get_app_settings)]
 
 
-def user_from_credentials(session: Session, settings: Settings, authorization: str | None, user_id: str | None) -> User:
-    """A Bearer token from /auth/login or /auth/signup; or, in demo mode only, a bare user id."""
-    from harbor.auth import user_for_token
-
-    if authorization:
-        scheme, _, token = authorization.partition(" ")
-        if scheme.lower() != "bearer" or not token.strip():
-            raise HarborError(401, "invalid_token", "Send the login token as: Authorization: Bearer <token>.")
-        user = user_for_token(session, token.strip())
-        if user is None:
-            raise HarborError(401, "invalid_token", "Your login has expired or you logged out. Log in again.")
-        return user
-    if user_id:
-        if settings.harbor_mode != "demo":
-            raise HarborError(401, "auth_required", "Log in and send Authorization: Bearer <token>.")
-        user = session.get(User, user_id)
-        if user is None:
-            raise HarborError(401, "user_not_found", "No user with this id. Sign up again.")
-        return user
-    raise HarborError(401, "auth_required", "Log in and send Authorization: Bearer <token>.")
+def user_from_authorization(session: Session, authorization: str | None) -> User:
+    """The user behind a Bearer token from /auth/login or /auth/signup."""
+    if not authorization:
+        raise HarborError(401, "auth_required", "Log in and send Authorization: Bearer <token>.")
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token.strip():
+        raise HarborError(401, "invalid_token", "Send the login token as: Authorization: Bearer <token>.")
+    user = user_for_token(session, token.strip())
+    if user is None:
+        raise HarborError(401, "invalid_token", "Your login has expired or you logged out. Log in again.")
+    return user
 
 
 def get_current_user(
-    request: Request,
     session: SessionDep,
     authorization: Annotated[str | None, Header(description="Bearer <token> from /auth/login or /auth/signup")] = None,
-    x_user_id: Annotated[str | None, Header(description="Demo mode only: a user id")] = None,
 ) -> User:
-    return user_from_credentials(session, request.app.state.settings, authorization, x_user_id)
+    return user_from_authorization(session, authorization)
 
 
 UserDep = Annotated[User, Depends(get_current_user)]

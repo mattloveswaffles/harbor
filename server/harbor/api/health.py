@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request
 from harbor.ai.llm import ai_enabled
 from harbor.bank import NessieError
 from harbor.clock import iso
-from harbor.deps import BankDep, ClockDep, SessionDep, SettingsDep
+from harbor.deps import BankDep, ClockDep, SettingsDep
 from harbor.schemas import HealthOut
 
 router = APIRouter(tags=["health"])
@@ -15,10 +15,10 @@ router = APIRouter(tags=["health"])
 NESSIE_CHECK_TTL_S = 30  # real seconds; health is polled, Nessie is slow
 
 
-async def nessie_status(request: Request, session, bank, settings) -> str:
+async def nessie_status(request: Request, bank, settings) -> str:
     if not settings.nessie_api_key.get_secret_value():
         return "missing_key"
-    cached = getattr(request.app.state, "nessie_check", None)
+    cached = request.app.state.nessie_check
     if cached and time.monotonic() - cached[0] < NESSIE_CHECK_TTL_S:
         return cached[1]
     try:
@@ -31,11 +31,11 @@ async def nessie_status(request: Request, session, bank, settings) -> str:
 
 
 @router.get("/health", response_model=HealthOut)
-async def health(request: Request, session: SessionDep, bank: BankDep, clock: ClockDep, settings: SettingsDep) -> dict:
+async def health(request: Request, bank: BankDep, clock: ClockDep, settings: SettingsDep) -> dict:
     return {
         "ok": True,
         "mode": settings.harbor_mode,
-        "nessie": await nessie_status(request, session, bank, settings),
+        "nessie": await nessie_status(request, bank, settings),
         "nhc": "replay" if settings.harbor_mode == "demo" else "unchecked",
         "ai": "ok" if ai_enabled(request.app) else "off",
         "chat": "ok" if ai_enabled(request.app) else "off",

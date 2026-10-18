@@ -1,4 +1,4 @@
-"""The evacuation money plan: GET /me/plan, approve, cancel and past plans."""
+"""The evacuation money plan: GET /me/plan, approve and cancel, and the bills it can move."""
 
 from datetime import timedelta
 
@@ -10,8 +10,8 @@ from harbor.clock import iso
 from harbor.deps import ClockDep, SessionDep, UserDep
 from harbor.engine.plan import BILL_SHIELD_DAYS
 from harbor.errors import HarborError
-from harbor.models import Bill, Move, Plan
-from harbor.planning import UNRUN, active_plan, approve, cancel_move, plan_to_api, resume_after_approval, start_restore
+from harbor.models import Bill, Plan
+from harbor.planning import active_plan, approve, plan_to_api, resume_after_approval, start_restore
 
 router = APIRouter(tags=["plan"])
 
@@ -62,22 +62,6 @@ def cancel_plan(session: SessionDep, user: UserDep, clock: ClockDep) -> dict:
     return {"server_time": iso(now), "plan": plan_to_api(session, plan, now)}
 
 
-@router.post("/me/plan/moves/{move_id}/cancel")
-def cancel_one(move_id: str, session: SessionDep, user: UserDep, clock: ClockDep) -> dict:
-    now = clock.now()
-    plan = _plan_or_404(session, user)
-    move = session.get(Move, move_id)
-    if move is None or move.plan_id != plan.id:
-        raise HarborError(404, "move_not_found", "No move with this id in your plan.")
-    if move.status not in UNRUN:
-        raise HarborError(409, "move_already_running", f"This move is already {move.status}.")
-    if move.cancel_deadline and now > move.cancel_deadline:
-        raise HarborError(409, "cancel_window_closed", "Too late to cancel: this move is about to run.")
-    cancel_move(session, user, move, now)
-    session.commit()
-    return {"server_time": iso(now), "plan": plan_to_api(session, plan, now)}
-
-
 @router.get("/me/bills")
 def get_bills(session: SessionDep, user: UserDep, clock: ClockDep) -> list[dict]:
     """Bills in Nessie. `in_storm_window` marks the ones the bill shield can move."""
@@ -99,10 +83,3 @@ def get_bills(session: SessionDep, user: UserDep, clock: ClockDep) -> list[dict]
         }
         for b in bills
     ]
-
-
-@router.get("/me/plans")
-def past_plans(session: SessionDep, user: UserDep, clock: ClockDep) -> dict:
-    now = clock.now()
-    plans = session.exec(select(Plan).where(Plan.user_id == user.id).order_by(col(Plan.created_at).desc())).all()
-    return {"server_time": iso(now), "plans": [plan_to_api(session, p, now) for p in plans]}

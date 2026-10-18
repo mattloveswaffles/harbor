@@ -112,12 +112,10 @@ def test_limited_to_ten_a_minute(client, auth, app):
     assert res.status_code == 429 and int(res.headers["Retry-After"]) >= 1
 
 
-def test_the_ai_offline_toggle_turns_chat_off(tmp_path, clock, bank):
+def test_chat_is_on_with_a_key(tmp_path, clock, bank):
     app = create_app(make_settings(tmp_path, openrouter_api_key="test-key"), clock=clock, bank=bank)
     with TestClient(app) as c:
         assert c.get("/health").json()["chat"] == "ok"
-        c.post(f"{API}/demo/ai", json={"enabled": False})
-        assert c.get("/health").json()["chat"] == "off"
 
 
 @pytest.mark.skipif(
@@ -130,7 +128,7 @@ def test_live_model_answers_from_the_bank(tmp_path, clock, bank):
     )
     with TestClient(app) as c:
         maria = make_household(c, "maria")
-        res = ask(c, {"X-User-Id": maria["id"]}, "How much money is in my checking and savings combined?")
+        res = ask(c, maria["auth"], "How much money is in my checking and savings combined?")
         assert res.status_code == 200, res.text
         reply, tools = answer(res)
         assert "bank_accounts" in tools and "920" in reply

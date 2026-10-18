@@ -1,10 +1,9 @@
 # Harbor in one image: Bun builds the website, the Python server serves it next to the API.
 #
 #   docker build -t harbor .
-#   docker run -p 3000:3000 harbor                           # offline demo bank
-#   docker run -p 3000:3000 --env-file .env harbor           # your settings (see .env.example)
+#   docker run -p 3000:3000 --env-file .env harbor   # NESSIE_API_KEY and the rest: see .env.example
 #
-# Then open http://localhost:3000 (or /app?demo to sign straight in as the demo household).
+# Then open http://localhost:3000, and run ./seed.sh to replay Hurricane Milton for a demo household.
 
 FROM oven/bun:1 AS web
 WORKDIR /app
@@ -17,7 +16,7 @@ FROM python:3.13-slim
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 ENV PYTHONUNBUFFERED=1 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never \
     PATH=/srv/server/.venv/bin:$PATH \
-    HARBOR_MODE=demo SITE_DIR=/srv/site PORT=3000
+    SITE_DIR=/srv/site PORT=3000
 
 WORKDIR /srv/server
 COPY server/pyproject.toml server/uv.lock ./

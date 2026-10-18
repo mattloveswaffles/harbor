@@ -47,8 +47,6 @@ def created_id(body) -> str | None:
 
 
 class NessieClient(Bank):
-    kind = "nessie"
-
     def __init__(
         self,
         base_url: str,

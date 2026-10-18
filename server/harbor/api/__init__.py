@@ -1,4 +1,4 @@
-"""API routers. Every endpoint lives under /api/v1 (except /health)."""
+"""API routers. Every endpoint lives under /api/v1 (except /health, which main.py mounts at the root)."""
 
 from fastapi import APIRouter
 
@@ -10,7 +10,6 @@ from harbor.api import (
     demo,
     evacuation,
     events,
-    health,
     plan,
     portfolio,
     profile,
@@ -35,5 +34,3 @@ router.include_router(portfolio.router)
 router.include_router(events.router)
 router.include_router(chat.router)
 router.include_router(demo.router)
-
-health_router = health.router

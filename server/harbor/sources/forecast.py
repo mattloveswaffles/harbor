@@ -18,29 +18,18 @@ from pathlib import Path
 from shapely import prepared
 from shapely.geometry import LineString, Point, Polygon, shape
 
-from harbor.clock import iso, utc
+from harbor.clock import iso, parse_time
+from harbor.geo import feature_collection, miles_between
 
 CONE_BUFFER_DEG = 0.1
-ESTIMATE_RADIUS_KM = 160  # about 100 miles: a typical tropical-storm wind radius for a large hurricane
+ESTIMATE_RADIUS_MI = 99.42  # 160 km: a typical tropical-storm wind radius for a large hurricane
 KT_TO_MPH = 1.15078
-
-
-def parse_time(s: str) -> datetime:
-    return utc(datetime.fromisoformat(s.replace("Z", "+00:00")))
 
 
 @lru_cache(maxsize=256)
 def _load_json(path: str) -> dict:
     with open(path, encoding="utf-8") as f:
         return json.load(f)
-
-
-def _km(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
-    """Great-circle distance in km."""
-    p1, p2 = math.radians(lat1), math.radians(lat2)
-    dp, dl = p2 - p1, math.radians(lon2 - lon1)
-    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-    return 2 * 6371.0 * math.asin(math.sqrt(a))
 
 
 @dataclass(frozen=True)
@@ -54,12 +43,10 @@ class Advisory:
     lat: float
     lon: float
     max_wind_kt: int | None
-    pressure_mb: int | None
     headline: str | None
     file: str
     wsp: str | None
     toa: str | None
-    products_from: str | None
 
     @property
     def max_wind_mph(self) -> int | None:
@@ -139,7 +126,6 @@ class _Toa:
     """Earliest-reasonable arrival isochrones."""
 
     def __init__(self, data: dict):
-        self.published_at = parse_time(data["published_at"])
         self.lines = [(parse_time(i["time"]), i["coordinates"]) for i in data["isochrones"]]
         self.lines.sort(key=lambda x: x[0])
         self.ring5 = prepared.prep(Polygon(data["ring5"])) if data.get("ring5") else None
@@ -180,8 +166,6 @@ def _floor_hour(dt: datetime) -> datetime:
 class ReplaySource:
     """A storm replay on disk, queried by time."""
 
-    is_replay = True
-
     def __init__(self, root: Path):
         self.root = Path(root)
         self.manifest = _load_json(str(self.root / "manifest.json"))
@@ -202,12 +186,10 @@ class ReplaySource:
                     lat=a["lat"],
                     lon=a["lon"],
                     max_wind_kt=a.get("max_wind_kt"),
-                    pressure_mb=a.get("pressure_mb"),
                     headline=a.get("headline"),
                     file=a["file"],
                     wsp=a.get("wsp"),
                     toa=a.get("toa"),
-                    products_from=a.get("products_from"),
                 )
                 for a in self.manifest["advisories"]
             ),
@@ -275,16 +257,16 @@ class ReplaySource:
         pts = self._forecast_points(adv.file)
         if len(pts) < 2:
             return False
-        dists = [_km(p_lon, p_lat, lon, lat) for _, p_lon, p_lat, _ in pts]
+        dists = [miles_between(p_lat, p_lon, lat, lon) for _, p_lon, p_lat, _ in pts]
         return dists[0] <= min(dists[1:])
 
     # --- map layers
     def cone_layer(self, now: datetime) -> dict:
         adv = self.advisory_at(now)
         if adv is None:
-            return _fc([])
+            return feature_collection([])
         feats = [f for f in self._features(adv.file) if f["properties"]["layer"] == "cone"]
-        return _fc(
+        return feature_collection(
             [
                 {
                     "type": "Feature",
@@ -303,7 +285,7 @@ class ReplaySource:
     def track_layer(self, now: datetime) -> dict:
         adv = self.advisory_at(now)
         if adv is None:
-            return _fc([])
+            return feature_collection([])
         out = []
         for f in self._features(adv.file):
             p = f["properties"]
@@ -325,7 +307,7 @@ class ReplaySource:
                     "label": p.get("label"),
                 }
             out.append({"type": "Feature", "geometry": f["geometry"], "properties": props})
-        return _fc(out)
+        return feature_collection(out)
 
     # --- file access (cached)
     def _path(self, rel: str) -> str:
@@ -365,13 +347,16 @@ class ReplaySource:
         return sorted(pts)
 
     def _estimate_eta(self, adv: Advisory, lon: float, lat: float) -> datetime | None:
-        """When the forecast centre first comes within ESTIMATE_RADIUS_KM, walking the track linearly."""
+        """When the forecast centre first comes within ESTIMATE_RADIUS_MI, walking the track linearly."""
         pts = self._forecast_points(adv.file)
         for (_, lon_a, lat_a, t_a), (_, lon_b, lat_b, t_b) in itertools.pairwise(pts):
             steps = max(1, int((t_b - t_a) / timedelta(hours=1)))
             for s in range(steps + 1):
                 f = s / steps
-                if _km(lon_a + (lon_b - lon_a) * f, lat_a + (lat_b - lat_a) * f, lon, lat) <= ESTIMATE_RADIUS_KM:
+                if (
+                    miles_between(lat_a + (lat_b - lat_a) * f, lon_a + (lon_b - lon_a) * f, lat, lon)
+                    <= ESTIMATE_RADIUS_MI
+                ):
                     return _floor_hour(t_a + (t_b - t_a) * f)
         return None
 
@@ -386,14 +371,6 @@ def _cached_toa(path: str) -> _Toa:
     return _Toa(_load_json(path))
 
 
-def _fc(features: list[dict]) -> dict:
-    return {"type": "FeatureCollection", "features": features}
-
-
-def empty_fc() -> dict:
-    return _fc([])
-
-
 # --- catalogue of replays on disk
 @lru_cache(maxsize=8)
 def _replay(root: str) -> ReplaySource:
@@ -405,24 +382,3 @@ def load_replay(replay_dir: Path, storm: str) -> ReplaySource | None:
     if not (root / "manifest.json").exists():
         return None
     return _replay(str(root))
-
-
-def list_replays(replay_dir: Path) -> list[dict]:
-    """GET /demo/storms rows."""
-    out = []
-    for manifest in sorted(Path(replay_dir).glob("*/manifest.json")):
-        m = _load_json(str(manifest))
-        out.append(
-            {
-                "id": m["id"],
-                "name": m["name"],
-                "year": m["year"],
-                "landfall_at": m.get("landfall_at"),
-                "description": m.get("description", ""),
-                "demo_zips": m.get("demo_zips", []),
-                "start": m["start"],
-                "end": m["end"],
-                "advisories": len(m["advisories"]),
-            }
-        )
-    return out

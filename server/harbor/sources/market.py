@@ -19,7 +19,6 @@ class Price:
     name: str
     price_cents: int
     as_of: datetime
-    source: str = "fixture"
 
 
 @lru_cache

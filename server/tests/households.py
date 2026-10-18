@@ -91,7 +91,7 @@ def _add_bills(app, user_id: str, bills: list[dict]) -> None:
 
 
 def make_household(client, who: str = "maria") -> dict:
-    """Sign a household up through the API; returns its GET /me."""
+    """Sign a household up through the API; returns its GET /me, with its login headers under `auth`."""
     spec = HOUSEHOLDS[who]
     email = f"{who}{next(_count)}@example.com"
     res = client.post(
@@ -105,4 +105,4 @@ def make_household(client, who: str = "maria") -> dict:
     for institution in ("chase", "robinhood"):
         assert client.post(f"{API}/me/connections/{institution}", headers=h).status_code == 200
     _add_bills(client.app, res.json()["user"]["id"], spec["bills"])
-    return client.get(f"{API}/me", headers=h).json()
+    return {**client.get(f"{API}/me", headers=h).json(), "auth": h}

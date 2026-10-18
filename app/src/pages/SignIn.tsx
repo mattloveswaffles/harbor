@@ -2,9 +2,8 @@ import { type FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Brand } from '../components/SiteLayout.tsx';
 import { ApiError, api } from '../lib/api.ts';
+import { shorePhoto } from '../lib/assets.ts';
 import { setToken } from '../lib/session.ts';
-
-const PHOTO = 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=2200&q=80';
 
 function message(err: unknown): string {
   if (err instanceof ApiError && err.code === 'invalid_credentials') return 'Wrong email or password.';
@@ -36,12 +35,12 @@ export default function SignIn() {
   return (
     <main className="auth">
       <title>Sign in · Harbor</title>
-      <img className="stage-photo" src={PHOTO} alt="" />
+      <img className="stage-photo" src={shorePhoto} alt="" />
       <form className="auth-card" onSubmit={onSubmit}>
         <Brand />
         <h1>Sign in</h1>
-        <label htmlFor="email">Email</label>
-        <input id="email" name="email" type="email" autoComplete="email" required />
+        <label htmlFor="email">Email or username</label>
+        <input id="email" name="email" autoComplete="username" required />
         <label htmlFor="password">Password</label>
         <input id="password" name="password" type="password" autoComplete="current-password" required />
         {error && (

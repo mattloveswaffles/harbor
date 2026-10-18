@@ -1,10 +1,10 @@
 import { type FormEvent, useEffect, useState } from 'react';
-import { Link } from 'react-router';
 import { AddressSearch } from '../../components/AddressSearch.tsx';
 import { Icon } from '../../components/Icon.tsx';
+import { Brand } from '../../components/SiteLayout.tsx';
 import { firstPlace, type Place } from '../../lib/address.ts';
 import { ApiError, api } from '../../lib/api.ts';
-import { mark } from '../../lib/assets.ts';
+import { shorePhoto } from '../../lib/assets.ts';
 import {
   getDraftAddress,
   getDraftPlace,
@@ -13,8 +13,6 @@ import {
   setToken,
   zipFrom,
 } from '../../lib/session.ts';
-
-const PHOTO = 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=2200&q=80';
 
 /** Check the ZIP is one Harbor covers; returns an error message or null. */
 async function covered(place: Place): Promise<string | null> {
@@ -103,12 +101,9 @@ export function Onboarding({ onSignedIn }: { onSignedIn: () => void }) {
 
   return (
     <section className="onboard">
-      <img className="stage-photo" src={PHOTO} alt="" />
+      <img className="stage-photo" src={shorePhoto} alt="" />
       <div className="onboard-card">
-        <Link className="brand" to="/">
-          <img src={mark} alt="" />
-          harbor
-        </Link>
+        <Brand />
         {place ? (
           <form className="step" onSubmit={signUp}>
             <h1>Create your account</h1>

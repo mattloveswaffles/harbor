@@ -3,7 +3,7 @@
 //   HARBOR_API_URL    a deployed Harbor server for static hosting (default: same origin)
 import { copyFile, readFile, rm, writeFile } from 'node:fs/promises';
 
-export interface BuildOptions {
+interface BuildOptions {
   outdir: string;
   basePath?: string;
   apiUrl?: string;

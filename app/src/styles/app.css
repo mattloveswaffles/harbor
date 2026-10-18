@@ -170,8 +170,6 @@
 .harbor-app .mark.closest b{color:#c4521f}
 .harbor-app .foot{margin-top:10px;font-size:12.5px;color:var(--muted)}
 
-/* Accounts */
-
 /* Route and shelters maps */
 .harbor-app .card.map{position:relative;min-height:640px;overflow:hidden;padding:0}
 .harbor-app .map-host{position:absolute;inset:0;background:#e9ece8}
@@ -332,12 +330,9 @@
 .harbor-app .tour{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:24px;background:#19241f40;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .harbor-app .tour-card{display:grid;grid-template-columns:220px 1fr;width:min(720px,100%);overflow:hidden;border-radius:28px;background:#fff;box-shadow:0 40px 100px #0b1f2a4d;animation:tour-in .45s var(--ease)}
 @keyframes tour-in{from{opacity:0;transform:translateY(16px) scale(.98)}}
-.harbor-app .character{display:grid;place-items:end center;min-height:240px;padding:18px 14px 6px}
-.harbor-app .character-art{width:100%;max-width:210px;height:auto;overflow:visible}
-.harbor-app .character .wave{transform-box:fill-box;transform-origin:0% 100%;animation:wave 1.8s ease-in-out infinite}
-.harbor-app .character .eyes{transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}
-@keyframes wave{50%{rotate:-14deg}}
-@keyframes blink{0%,92%,100%{scale:1 1}95%{scale:1 .1}}
+.harbor-app .tour-art{position:relative;min-height:260px;overflow:hidden;background:#f3f5f1}
+.harbor-app .tour-art img{position:absolute;left:50%;bottom:-16px;height:224px;transform:translateX(-50%);animation:tour-dude .5s var(--ease)}
+@keyframes tour-dude{from{opacity:0;transform:translate(-50%,14px)}}
 .harbor-app .tour-body{display:flex;flex-direction:column;padding:30px 30px 24px}
 .harbor-app .tour-name{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent)}
 .harbor-app .tour-body h2{margin-top:8px;font-size:28px;letter-spacing:-.8px;line-height:1.15}
@@ -405,7 +400,6 @@
   .harbor-app .card{padding:16px}
   .harbor-app .card.map{min-height:52dvh}
   .harbor-app .conditions .legend{display:none}
-  .harbor-app .fund-big strong{font-size:38px}
   .harbor-app .modal-back{padding:0}
   .harbor-app .modal{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:100dvh;border-radius:0}
   .harbor-app .stabs{flex-direction:row;overflow-x:auto;padding:12px;border-right:0;border-bottom:1px solid var(--line);scrollbar-width:none}
@@ -423,7 +417,7 @@
   .harbor-app .onboard-card h1{font-size:26px}
   .harbor-app .tour{place-items:end stretch;padding:0}
   .harbor-app .tour-card{grid-template-columns:1fr;border-radius:28px 28px 0 0;padding-bottom:env(safe-area-inset-bottom)}
-  .harbor-app .character{min-height:170px}
-  .harbor-app .character-art{max-width:170px}
+  .harbor-app .tour-art{min-height:180px}
+  .harbor-app .tour-art img{height:164px}
   .harbor-app .tour-body{padding:20px 22px 22px}
 }

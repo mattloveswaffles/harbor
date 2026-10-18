@@ -1,5 +1,6 @@
 """Storm: NHC forecasts, the Milton replay, sensors, risk levels and the storm API."""
 
+import json
 import time
 from datetime import UTC, datetime, timedelta
 
@@ -7,14 +8,15 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, col, select
 
+from harbor.clock import iso, parse_time
 from harbor.config import Settings
 from harbor.engine.risk import Level, RiskInputs, next_level
 from harbor.main import create_app
 from harbor.models import Event, User
-from harbor.sources.forecast import list_replays, load_replay, parse_time
+from harbor.sources.forecast import load_replay
 from harbor.sources.sensors import SensorSource, Series, Station, recovery_gate, status_of
-from harbor.ticker import evaluate, replay_end, steps_between, tick
-from tests.conftest import make_settings
+from harbor.ticker import evaluate, steps_between, tick
+from tests.conftest import advance, make_settings
 from tests.households import make_household
 
 TAMPA = (27.953704, -82.45631)  # ZIP 33602, Maria
@@ -46,7 +48,7 @@ def test_manifest_times_come_from_the_archive(milton):
     # Special advisory 9 was off the usual cycle; it reuses advisory 8's wind probabilities.
     assert by_adv["009"].wsp == by_adv["008"].wsp
     # Intermediate advisories reuse the last full advisory's products.
-    assert by_adv["015A"].wsp == by_adv["015"].wsp and by_adv["015A"].products_from == "015"
+    assert by_adv["015A"].wsp == by_adv["015"].wsp
     assert milton.manifest["landfall_at"] == "2024-10-10T00:30:00Z"
     assert all(a["issued_from"] == "tcm" for a in milton.manifest["advisories"] if not a["intermediate"])
 
@@ -138,29 +140,23 @@ def test_toa_times_increase_and_follow_publication(milton):
     for adv in milton.advisories:
         if adv.intermediate or not adv.toa:
             continue
-        toa = milton._toa(adv.toa)
-        times = [t for t, _ in toa.lines]
+        times = [t for t, _ in milton._toa(adv.toa).lines]
+        published = parse_time(json.loads((milton.root / adv.toa).read_text(encoding="utf-8"))["published_at"])
         assert times == sorted(times) and len(set(times)) == len(times)
-        assert times[0] >= toa.published_at - timedelta(hours=1)
-        assert times[-1] - toa.published_at <= timedelta(days=6)
-
-
-def test_list_replays():
-    rows = list_replays(Settings(_env_file=None).replay_dir)
-    milton = next(r for r in rows if r["id"] == "milton-2024")
-    assert milton["name"] == "Milton" and milton["year"] == 2024 and milton["demo_zips"][0] == "33602"
-    assert milton["start"] == "2024-10-06T03:00:00Z" and milton["advisories"] == 41
-    assert datetime.fromisoformat(milton["end"].replace("Z", "+00:00")) > datetime(2024, 10, 10, tzinfo=UTC)
+        assert times[0] >= published - timedelta(hours=1)
+        assert times[-1] - published <= timedelta(days=6)
 
 
 ORDERED = ["monitor", "prepare", "act", "shelter", "recover"]
+src = SensorSource("milton-2024")
+SENSORS_END = min(s.times[-1] for s in src.series)  # rivers flood for days after the last advisory
 
 
 def run(milton, lat, lon, zip_code, start=None):
     """Every level change from `start` (default: the replay start) to after the replay ends."""
     start = start or milton.start
     level, changes = Level.clear, []
-    for t in steps_between(milton, start - timedelta(seconds=1), replay_end(milton)):
+    for t in steps_between(milton, start - timedelta(seconds=1), SENSORS_END):
         decision, _ = evaluate(milton, level, lat, lon, zip_code, t)
         if decision.changed:
             changes.append((decision.level.value, t))
@@ -256,13 +252,6 @@ def risk_changes(app, user_id):
     return [(e.data["to"], e.at.isoformat().replace("+00:00", "Z")) for e in events(app, user_id, {"risk_changed"})]
 
 
-def test_demo_storms(client):
-    rows = client.get(f"{API}/demo/storms").json()
-    milton = next(r for r in rows if r["id"] == "milton-2024")
-    assert milton["landfall_at"] == "2024-10-10T00:30:00Z" and milton["demo_zips"] == ["33602", "34236"]
-    assert milton["start"] == "2024-10-06T03:00:00Z" and milton["advisories"] == 41
-
-
 def test_storm_before_the_demo_starts(client, auth):
     body = client.get(f"{API}/me/storm", headers=auth).json()
     assert body["server_time"] == "2024-10-06T03:00:00Z"
@@ -341,10 +330,10 @@ def test_map_has_cone_and_track_after_start(client, auth):
     assert "NOAA NHC" in body["attribution"] and "USGS" in body["attribution"]
 
 
-def test_advance_hours_records_each_advisory_at_its_time(client, maria, app):
+def test_catching_up_records_each_advisory_at_its_time(client, maria, app, clock):
     client.post(f"{API}/demo/start")
-    res = client.post(f"{API}/demo/advance", json={"hours": 7})
-    assert res.json()["now"] == "2024-10-06T10:00:00Z"
+    advance(client, hours=7)
+    assert iso(clock.now()) == "2024-10-06T10:00:00Z"
     adv = [(e.data["advisory"], e.at.isoformat()) for e in events(app, maria["id"], {"advisory_issued"})]
     assert adv == [
         ("003", "2024-10-06T03:00:00+00:00"),
@@ -353,24 +342,17 @@ def test_advance_hours_records_each_advisory_at_its_time(client, maria, app):
     ]
 
 
-def test_advance_to_next_advisory(client):
+def test_maria_walks_the_whole_storm(client, auth, maria, app, clock):
     client.post(f"{API}/demo/start")
-    assert client.post(f"{API}/demo/advance", json={"to": "next_advisory"}).json()["now"] == "2024-10-06T06:00:00Z"
-    assert client.post(f"{API}/demo/advance", json={"to": "next_advisory"}).json()["now"] == "2024-10-06T09:00:00Z"
-
-
-def test_advance_to_risk_walks_the_whole_storm(client, auth, maria, app):
-    client.post(f"{API}/demo/start")
-    res = client.post(f"{API}/demo/advance", json={"to_risk": "shelter"})
-    assert res.status_code == 200, res.text
-    assert res.json()["now"] == "2024-10-09T09:00:00Z"
+    advance(client, to_risk="shelter")
+    assert iso(clock.now()) == "2024-10-09T09:00:00Z"
     body = client.get(f"{API}/me/storm", headers=auth).json()
     assert body["risk_level"] == "shelter"
     assert {a["type"] for a in body["at_your_zip"]["alerts"]} == {"hurricane_warning", "storm_surge_warning"}
     assert body["at_your_zip"]["alerts"][0]["source"] == "iem"
 
-    res = client.post(f"{API}/demo/advance", json={"to_risk": "recover"})
-    assert res.json()["now"] == "2024-10-13T20:00:00Z"
+    advance(client, to_risk="recover")
+    assert iso(clock.now()) == "2024-10-13T20:00:00Z"
     assert risk_changes(app, maria["id"]) == [
         ("act", "2024-10-06T03:00:00Z"),
         ("shelter", "2024-10-09T09:00:00Z"),
@@ -382,61 +364,14 @@ def test_advance_to_risk_walks_the_whole_storm(client, auth, maria, app):
     assert seen[0] == "003" and seen[-1] == "023" and len(seen) == len(set(seen)) == 39
 
 
-def test_advance_to_the_current_level_is_a_no_op(client, maria):
-    client.post(f"{API}/demo/start")
-    assert client.post(f"{API}/demo/advance", json={"to_risk": "act"}).json()["now"] == "2024-10-06T03:00:00Z"
-
-
-def test_advance_to_an_unreachable_level(client, maria):
-    client.post(f"{API}/demo/start")
-    res = client.post(f"{API}/demo/advance", json={"to_risk": "prepare"})  # Tampa skips prepare
-    assert res.status_code == 409 and res.json()["error"]["code"] == "risk_level_not_reached"
-    assert client.get(f"{API}/demo/clock").json()["now"] == "2024-10-06T03:00:00Z"
-
-
-def test_advance_needs_exactly_one_target(client):
-    client.post(f"{API}/demo/start")
-    for body in ({}, {"hours": 1, "to": "next_advisory"}):
-        res = client.post(f"{API}/demo/advance", json=body)
-        assert res.status_code == 422 and res.json()["error"]["code"] == "validation_error"
-    assert client.post(f"{API}/demo/advance", json={"hours": -1}).status_code == 422
-
-
-def test_no_more_advisories(client):
-    client.post(f"{API}/demo/start")
-    client.post(f"{API}/demo/advance", json={"hours": 150})
-    res = client.post(f"{API}/demo/advance", json={"to": "next_advisory"})
-    assert res.status_code == 409 and res.json()["error"]["code"] == "no_more_advisories"
-
-
-def test_clock_routes_need_a_started_demo(client):
-    for path in ("/demo/advance", "/demo/pause", "/demo/resume"):
-        res = client.post(f"{API}{path}", json={"hours": 1})
-        assert res.status_code == 409 and res.json()["error"]["code"] == "demo_not_started"
-
-
 def test_unknown_storm(client):
     res = client.post(f"{API}/demo/start", json={"storm": "andrew-1992"})
     assert res.status_code == 404 and res.json()["error"]["code"] == "storm_not_found"
 
 
-def test_pause_and_resume(client, timer):
-    client.post(f"{API}/demo/start", json={"speed": 3600})
-    paused = client.post(f"{API}/demo/pause").json()
-    assert paused["running"] is False and paused["paused_reason"] == "manual"
-    timer.t += 10
-    assert client.get(f"{API}/demo/clock").json()["now"] == "2024-10-06T03:00:00Z"
-    # Advancing while paused keeps the clock paused.
-    assert client.post(f"{API}/demo/advance", json={"hours": 1}).json()["running"] is False
-    resumed = client.post(f"{API}/demo/resume").json()
-    assert resumed["running"] is True and resumed["paused_reason"] is None
-    timer.t += 1
-    assert client.get(f"{API}/demo/clock").json()["now"] == "2024-10-06T05:00:00Z"
-
-
 def test_restart_resets_risk_but_not_the_feed(client, auth, maria, app):
     client.post(f"{API}/demo/start")
-    client.post(f"{API}/demo/advance", json={"to_risk": "shelter"})
+    advance(client, to_risk="shelter")
     client.post(f"{API}/demo/start")
     assert client.get(f"{API}/me/storm", headers=auth).json()["risk_level"] == "act"
     assert [lvl for lvl, _ in risk_changes(app, maria["id"])] == ["act", "shelter", "act"]
@@ -467,30 +402,16 @@ def test_tick_is_idempotent(client, maria, app, clock):
         assert s.get(User, maria["id"]).risk_level == "act"
 
 
-def test_new_demo_routes_are_off_in_live_mode(tmp_path, bank):
-    app = create_app(make_settings(tmp_path, harbor_mode="live"), bank=bank)
-    with TestClient(app) as c:
-        for method, path in (
-            ("get", "/demo/storms"),
-            ("post", "/demo/start"),
-            ("post", "/demo/advance"),
-            ("post", "/demo/pause"),
-            ("post", "/demo/resume"),
-        ):
-            res = getattr(c, method)(f"{API}{path}")
-            assert res.status_code == 403 and res.json()["error"]["code"] == "demo_mode_only"
-
-
 def test_scheduler_runs_the_tick(tmp_path, bank, clock):
     app = create_app(make_settings(tmp_path, scheduler_enabled=True, tick_seconds=0.05), clock=clock, bank=bank)
     with TestClient(app) as c:
-        user_id = make_household(c, "maria")["id"]
+        auth = make_household(c, "maria")["auth"]
         clock.start("milton-2024")  # straight on the clock, not via /demo/start, so only the scheduler ticks
         deadline = time.monotonic() + 5
         level = "clear"
         while time.monotonic() < deadline and level == "clear":
             time.sleep(0.05)
-            level = c.get(f"{API}/me/storm", headers={"X-User-Id": user_id}).json()["risk_level"]
+            level = c.get(f"{API}/me/storm", headers=auth).json()["risk_level"]
         assert level == "act"
 
 
@@ -611,9 +532,6 @@ UTC = UTC
 GAUGE_HOME = (27.9506, -82.4572)
 
 
-src = SensorSource()
-
-
 def utc(*args) -> datetime:
     return datetime(*args, tzinfo=UTC)
 
@@ -685,11 +603,3 @@ def test_stale_data_is_never_all_clear():
     assert status_of(s, later).stale
     clear, reason = recovery_gate([s], later)
     assert clear is False and "no fresh reading" in reason
-
-
-def test_history_for_charts():
-    rows = src.history("coops_8726520", utc(2024, 10, 10, 12), hours=48, metrics=["surge_ft", "predicted_ft"])
-    assert 0 < len(rows) <= 480
-    assert set(rows[0]["readings"]) <= {"surge_ft", "predicted_ft"}
-    assert rows[-1]["observed_at"] <= "2024-10-10T12:00:00Z"
-    assert src.history("nope", utc(2024, 10, 10, 12)) == []

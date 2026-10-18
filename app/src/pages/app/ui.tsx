@@ -1,6 +1,9 @@
-import { type ReactNode, type RefObject, useState } from 'react';
+import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
 import { Icon, type IconName } from '../../components/Icon.tsx';
+import { api } from '../../lib/api.ts';
 import { mark } from '../../lib/assets.ts';
+import { moneyRound } from '../../lib/format.ts';
+import type { Plan } from '../../lib/types.ts';
 import { useDashboard } from './useHarbor.ts';
 
 /** Harbor's loading screen: the mark and a spinner, centred on the page or in the tab. */
@@ -19,22 +22,19 @@ export function ActionButton({
   done,
   className,
   children,
-  pressed,
 }: {
   action: () => Promise<unknown>;
   done: string;
-  className?: string;
+  className: string;
   children: ReactNode;
-  pressed?: boolean;
 }) {
   const { act } = useDashboard();
   const [busy, setBusy] = useState(false);
   return (
     <button
-      className={busy ? `${className ?? ''} busy` : className}
+      className={busy ? `${className} busy` : className}
       type="button"
       disabled={busy}
-      aria-pressed={pressed}
       onClick={async () => {
         setBusy(true);
         await act(action, done);
@@ -46,6 +46,15 @@ export function ActionButton({
   );
 }
 
+export function ApproveButton({ plan, done }: { plan: Plan; done: string }) {
+  return (
+    <ActionButton className="btn" action={() => api.approve(plan.version)} done={done}>
+      Approve {moneyRound(plan.budget.total_cents)}
+      <Icon name="arrow" />
+    </ActionButton>
+  );
+}
+
 export function Quiet({ icon, children }: { icon: IconName; children: ReactNode }) {
   return (
     <p className="quiet">
@@ -53,6 +62,22 @@ export function Quiet({ icon, children }: { icon: IconName; children: ReactNode 
       {children}
     </p>
   );
+}
+
+/** A map made once on `el` and removed on unmount. */
+export function useMap<M extends { remove(): void }>(make: (el: HTMLElement) => M) {
+  const el = useRef<HTMLDivElement>(null);
+  const map = useRef<M>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the map is made once
+  useEffect(() => {
+    if (!el.current) return;
+    map.current = make(el.current);
+    return () => {
+      map.current?.remove();
+      map.current = null;
+    };
+  }, []);
+  return { el, map };
 }
 
 /** + / − / recenter over a map. */

@@ -13,8 +13,7 @@ def test_weather_before_any_storm(client, auth):
 
 
 def test_weather_during_milton(client, auth):
-    client.post(f"{API}/demo/start")
-    client.post(f"{API}/demo/advance", json={"to_risk": "prepare"})
+    client.post(f"{API}/demo/start")  # Maria is at act from the replay start
     body = client.get(f"{API}/me/weather", headers=auth).json()
     storm = body["storm"]
     assert storm["name"] == "Milton" and storm["category_at_closest"] >= 1

@@ -8,12 +8,15 @@ from typing import Protocol
 
 from fastapi import Request
 
-UTC = UTC
-
 
 def utc(dt: datetime) -> datetime:
     """Treat naive datetimes as UTC and convert aware ones to UTC."""
     return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
+
+
+def parse_time(s: str) -> datetime:
+    """ISO 8601 (Z or an offset) -> aware UTC."""
+    return utc(datetime.fromisoformat(s.replace("Z", "+00:00")))
 
 
 def iso(dt: datetime | None) -> str | None:
@@ -30,9 +33,6 @@ class Clock(Protocol):
 class RealClock:
     def now(self) -> datetime:
         return datetime.now(UTC)
-
-    def state(self) -> dict:
-        return {"running": True, "storm": None, "now": iso(self.now()), "speed": 1, "paused_reason": None}
 
 
 class DemoClock:
@@ -111,11 +111,6 @@ class DemoClock:
             self._anchor_sim += delta
             return self._anchor_sim
 
-    def set(self, at: datetime) -> None:
-        with self._lock:
-            self._anchor_sim = utc(at)
-            self._anchor_real = self._real()
-
     @property
     def running(self) -> bool:
         return self.storm is not None and not self.paused
@@ -123,7 +118,7 @@ class DemoClock:
     def state(self) -> dict:
         with self._lock:
             return {
-                "running": self.storm is not None and not self.paused,
+                "running": self.running,
                 "storm": self.storm,
                 "now": iso(self._now()),
                 "speed": self.speed,

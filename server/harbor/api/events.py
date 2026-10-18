@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 from sqlmodel import Session, select
 
-from harbor.deps import SessionDep, UserDep
+from harbor.deps import SessionDep, UserDep, user_from_authorization
 from harbor.errors import HarborError
 from harbor.events import bus, event_to_api, events_after, feed
 from harbor.models import Event
@@ -44,14 +44,10 @@ def list_events(
 def stream_user(
     request: Request,
     token: Annotated[str | None, Query(description="The login token (EventSource can't send headers)")] = None,
-    user_id: Annotated[str | None, Query(description="Demo mode only: a user id")] = None,
 ) -> str:
-    from harbor.deps import user_from_credentials
-
     # Its own short session: a yield dependency's session would stay open for the whole stream.
     with Session(request.app.state.engine) as session:
-        user = user_from_credentials(session, request.app.state.settings, f"Bearer {token}" if token else None, user_id)
-        return user.id
+        return user_from_authorization(session, f"Bearer {token}" if token else None).id
 
 
 def _last_seq(engine, user_id: str, last_event_id: str | None) -> int | None:

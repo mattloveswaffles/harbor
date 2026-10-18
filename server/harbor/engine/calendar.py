@@ -7,8 +7,6 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime, time, timedelta
 
-UTC = UTC
-
 SELL_TIME = time(10, 0)  # Harbor places sales 30 minutes after the open
 MARKET_CLOSE = time(16, 0)
 EARLY_CLOSE = time(13, 0)
@@ -184,8 +182,3 @@ def latest_safe_approval_at(cash_needed_by: datetime, now: datetime, cancel_wind
         return None
     deadline = latest_sale - cancel_window
     return deadline if deadline >= now else None
-
-
-def arrives_late(now: datetime, cash_needed_by: datetime, cancel_window: timedelta = timedelta(0)) -> bool:
-    """True if even the earliest possible sale would settle after the cash is needed."""
-    return cash_available_at(next_sell_time(now + cancel_window)) > cash_needed_by

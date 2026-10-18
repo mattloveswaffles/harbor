@@ -100,16 +100,16 @@ cp .env.example .env  # NESSIE_API_KEY for the bank, OPENROUTER_API_KEY for the 
 make dev              # http://localhost:8000, rebuilding the app on save
 ```
 
-Or everything in one container: `make docker`, then open http://localhost:3000. Harbor runs normally, on real time. To see it plan for a storm, run `./seed.sh`: it signs up a demo household, connects its bank through Nessie, starts the Hurricane Milton scenario and opens the app signed in.
+Or everything in one container: `make docker`, then open http://localhost:3000. Harbor runs normally, on real time. To see it plan for a storm, run `./seed.sh`: it creates the demo household (sign in with `demo` / `1111`), connects its bank through Nessie, starts the Hurricane Milton scenario and opens the app signed in. Run it again to reset the demo.
 
 ## Check it
 
 ```sh
-make check            # ruff + pytest for the server, Biome + tsc + bun test for the app
+make check            # ruff + pytest for the server, Biome + tsc + bun test + build for the app
 ```
 
-CI runs the same two checks on every push. When both pass on `main`, the site deploys to GitHub Pages. The `OPENROUTER_API_KEY` repository secret only reaches the server tests, never the published site.
+CI runs the same two checks on every push and pull request. When both pass on `main`, the site deploys to GitHub Pages, where it calls the Harbor server hosted on our own machine. The `OPENROUTER_API_KEY` repository secret only reaches the server tests, never the published site.
 
 ## Credits
 
-Storm data: NOAA National Hurricane Center (replayed from the public archive). Weather: Open-Meteo (CC BY 4.0). Routes: OSRM. Shelters: FEMA Open Shelters (Hillsborough County's Milton shelters in the replay). Maps: OpenFreeMap, Esri and © OpenStreetMap contributors. Banking: Capital One's Nessie sandbox. Icons: Hugeicons (MIT). Households in the demo are fictional.
+Storm data: NOAA National Hurricane Center (replayed from the public archive). Weather: Open-Meteo (CC BY 4.0). Routes: OSRM, or openrouteservice when `ORS_API_KEY` is set. Shelters: FEMA Open Shelters (Hillsborough County's Milton shelters in the replay). Maps: OpenFreeMap, Esri and © OpenStreetMap contributors. Banking: Capital One's Nessie sandbox. Icons: Hugeicons (MIT). Households in the demo are fictional.

@@ -1,6 +1,6 @@
 # Harbor: one entry point for local work and CI. Needs uv (server) and bun (app).
 .DEFAULT_GOAL := help
-.PHONY: help install dev dev-server dev-app build check check-server check-app lint test format docker seed clean
+.PHONY: help install dev dev-server dev-app build check check-server check-app format docker seed clean
 
 help: ## Show the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -21,21 +21,13 @@ dev-app:
 build: ## Build the website into app/dist
 	cd app && bun run build
 
-check: check-server check-app ## Lint, type-check and test everything (what CI runs)
+check: check-server check-app ## Lint, type-check, test and build everything (what CI runs)
 
 check-server: ## Server: ruff lint + format check, pytest
 	cd server && uv run ruff check && uv run ruff format --check && uv run pytest
 
-check-app: ## App: biome, tsc, bun test
-	cd app && bun run lint && bun run typecheck && bun run test
-
-lint: ## Lint only
-	cd server && uv run ruff check && uv run ruff format --check
-	cd app && bun run lint && bun run typecheck
-
-test: ## Tests only
-	cd server && uv run pytest
-	cd app && bun run test
+check-app: ## App: biome, tsc, bun test, build
+	cd app && bun run lint && bun run typecheck && bun run test && bun run build
 
 format: ## Auto-fix formatting and safe lint issues
 	cd server && uv run ruff check --fix && uv run ruff format

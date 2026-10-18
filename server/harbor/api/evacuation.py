@@ -7,7 +7,7 @@ from harbor.context import evacuation_for, storm_inputs
 from harbor.deps import ClockDep, SessionDep, UserDep
 from harbor.errors import HarborError
 from harbor.evac.atms import rank_atms
-from harbor.evac.destination import _to_shape, load_destinations
+from harbor.evac.destination import load_destinations, to_shape
 
 router = APIRouter(tags=["evacuation"])
 
@@ -36,7 +36,7 @@ def get_atms(
     bundle = evacuation_for(request.app, session, user, now)
     if bundle and radius_miles == 150:
         return bundle["atms"]
-    cone = _to_shape(storm_inputs(request.app, user, now)["cone"])
+    cone = to_shape(storm_inputs(request.app, user, now)["cone"])
     route = (
         bundle["layers"]["route"]["features"][0]["geometry"]
         if bundle and bundle["layers"]["route"]["features"]
@@ -52,7 +52,7 @@ def choose_destination(
     """Choose a destination; the route, lodging and plan budget follow."""
     if body.destination_id not in {d.id for d in load_destinations()}:
         raise HarborError(404, "destination_not_found", "Unknown destination id.")
-    previous = dict(user.settings or {})
+    previous = dict(user.settings)
     user.settings = {**previous, "evac_destination": body.destination_id}
     now = clock.now()
     bundle = evacuation_for(request.app, session, user, now)

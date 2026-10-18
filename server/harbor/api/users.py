@@ -1,16 +1,16 @@
-"""ZIP preview, sign-up, the current user, household and accounts."""
+"""ZIP preview, sign-up, the current user and accounts."""
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Path
 from sqlmodel import Session
 
 from harbor.bank import NessieError, from_dollars
 from harbor.clock import iso
-from harbor.deps import BankDep, ClockDep, SessionDep, UserDep, require_demo
+from harbor.deps import BankDep, ClockDep, SessionDep, UserDep
 from harbor.errors import HarborError
 from harbor.geo import lookup_zip
-from harbor.models import DEFAULT_SETTINGS, Household, User, new_id
+from harbor.models import DEFAULT_SETTINGS, Household, User
 from harbor.provisioning import provision_user, user_accounts
-from harbor.schemas import AccountOut, CreateUser, HouseholdModel, HouseholdPatch, UserOut, UserPatch, ZipOut
+from harbor.schemas import AccountOut, CreateUser, HouseholdModel, UserOut, UserPatch, ZipOut
 
 router = APIRouter(tags=["users"])
 
@@ -29,25 +29,14 @@ def zip_or_400(zip_code: str, field: str = "zip") -> dict:
 
 
 def user_out(session: Session, user: User) -> UserOut:
-    household = session.get(Household, user.id) or Household(user_id=user.id)
     return UserOut(
         id=user.id,
         name=user.name,
         zip=user.zip,
         location={"lat": user.lat, "lon": user.lon},
         location_source=user.location_source,
-        household=HouseholdModel(
-            adults=household.adults,
-            children_ages=household.children_ages or [],
-            seniors=household.seniors,
-            pets=household.pets or [],
-            mobility=household.mobility,
-            medical=household.medical or {},
-            has_car=household.has_car,
-            home_type=household.home_type,
-            evac_zone=household.evac_zone,
-        ),
-        settings={**DEFAULT_SETTINGS, **(user.settings or {})},
+        household=HouseholdModel.model_validate(session.get(Household, user.id).model_dump()),
+        settings=user.settings,
         nessie_customer_id=user.nessie_customer_id,
         risk_level=user.risk_level,
     )
@@ -62,7 +51,6 @@ async def new_user(body: CreateUser, session: Session, bank, now) -> User:
     """Create a user with their Nessie customer, accounts and starter portfolio. Caller commits."""
     place = zip_or_400(body.zip)
     user = User(
-        id=new_id("usr"),
         name=body.name.strip(),
         zip=body.zip,
         lat=body.location.lat if body.location else place["lat"],
@@ -75,16 +63,6 @@ async def new_user(body: CreateUser, session: Session, bank, now) -> User:
     household = (body.household or HouseholdModel()).model_dump()
     await provision_user(session, bank, user, household, now)
     return user
-
-
-@router.post("/users", response_model=UserOut, status_code=201, dependencies=[Depends(require_demo)])
-async def create_user(body: CreateUser, session: SessionDep, bank: BankDep, clock: ClockDep) -> UserOut:
-    """Demo only: a user without a password, used with the X-User-Id header. Real accounts use
-    POST /auth/signup."""
-    user = await new_user(body, session, bank, clock.now())
-    session.commit()
-    session.refresh(user)
-    return user_out(session, user)
 
 
 @router.get("/me", response_model=UserOut)
@@ -104,21 +82,10 @@ def patch_me(body: UserPatch, user: UserDep, session: SessionDep) -> UserOut:
         user.lat, user.lon, user.location_source = body.location.lat, body.location.lon, "gps"
     if body.settings is not None:
         changes = body.settings.model_dump(exclude_none=True)
-        user.settings = {**DEFAULT_SETTINGS, **(user.settings or {}), **changes}
+        user.settings = {**user.settings, **changes}
     session.add(user)
     session.commit()
     session.refresh(user)
-    return user_out(session, user)
-
-
-@router.patch("/me/household", response_model=UserOut)
-def patch_household(body: HouseholdPatch, user: UserDep, session: SessionDep) -> UserOut:
-    # TODO: re-run the plan and the evacuation guide after a household change.
-    household = session.get(Household, user.id) or Household(user_id=user.id)
-    for field, value in body.model_dump(exclude_none=True).items():
-        setattr(household, field, value)
-    session.add(household)
-    session.commit()
     return user_out(session, user)
 
 

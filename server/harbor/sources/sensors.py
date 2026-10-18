@@ -7,12 +7,13 @@ major flood and falling. Stale or missing data never counts as clear.
 from __future__ import annotations
 
 import json
-import math
 from bisect import bisect_right
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from functools import lru_cache
 from pathlib import Path
+
+from harbor.clock import iso, parse_time
+from harbor.geo import miles_between
 
 DATA = Path(__file__).resolve().parents[2] / "data" / "sensors"
 
@@ -67,7 +68,7 @@ class Reading:
             "name": self.station.name,
             "location": {"lat": self.station.lat, "lon": self.station.lon},
             "distance_miles": self.distance_miles,
-            "observed_at": None if self.observed_at is None else self.observed_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "observed_at": iso(self.observed_at),
             "readings": self.readings,
             "status": "stale" if self.stale else self.status,
             "status_reason": self.status_reason,
@@ -83,24 +84,13 @@ class Reading:
         return out
 
 
-def miles_between(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    r = 3958.8
-    p1, p2 = math.radians(lat1), math.radians(lat2)
-    a = math.sin((p2 - p1) / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(math.radians(lon2 - lon1) / 2) ** 2
-    return 2 * r * math.asin(math.sqrt(a))
-
-
-def _parse(t: str) -> datetime:
-    return datetime.fromisoformat(t.replace("Z", "+00:00"))
-
-
 class Series:
     """One station's rows, sorted by time, with lookups that never peek past `now`."""
 
     def __init__(self, station: Station, rows: list[dict]):
         self.station = station
         self.rows = rows
-        self.times = [_parse(r["t"]) for r in rows]
+        self.times = [parse_time(r["t"]) for r in rows]
 
     def at(self, now: datetime) -> tuple[datetime, dict] | None:
         i = bisect_right(self.times, now)
@@ -267,28 +257,24 @@ def recovery_gate(series: list[Series], now: datetime) -> tuple[bool, str]:
     return True, "Pressure has recovered, the water is back to normal and rivers are falling."
 
 
-# --- Replay source
-@lru_cache
-def load_replay(storm: str = "milton-2024") -> tuple[Series, ...]:
-    folder = DATA / storm
-    out = []
-    for path in sorted(folder.glob("*.json")):
-        if path.name == "stations.json":
-            continue
-        data = json.loads(path.read_text(encoding="utf-8"))
-        st = data["station"]
-        station = Station(
-            st["id"], st["source"], st["name"], st["lat"], st["lon"], st["attribution"], data.get("flood_stages_ft", {})
-        )
-        out.append(Series(station, data["rows"]))
-    return tuple(out)
-
-
 class SensorSource:
-    """Recorded sensors for a storm, seen through the clock."""
+    """Recorded sensors for a storm (data/sensors/<storm>/), seen through the clock."""
 
-    def __init__(self, storm: str = "milton-2024", series: tuple[Series, ...] | None = None):
-        self.series = list(series if series is not None else load_replay(storm))
+    def __init__(self, storm: str):
+        self.series = []
+        for path in sorted((DATA / storm).glob("*.json")):
+            data = json.loads(path.read_text(encoding="utf-8"))
+            st = data["station"]
+            station = Station(
+                st["id"],
+                st["source"],
+                st["name"],
+                st["lat"],
+                st["lon"],
+                st["attribution"],
+                data.get("flood_stages_ft", {}),
+            )
+            self.series.append(Series(station, data["rows"]))
 
     def near(self, lat: float, lon: float, radius_miles: float = 200) -> list[Series]:
         return [s for s in self.series if miles_between(lat, lon, s.station.lat, s.station.lon) <= radius_miles]
@@ -300,26 +286,6 @@ class SensorSource:
             r.distance_miles = round(miles_between(lat, lon, s.station.lat, s.station.lon))
             out.append(r)
         return sorted(out, key=lambda r: r.distance_miles)
-
-    @property
-    def end(self) -> datetime | None:
-        """When the recording stops: the replay keeps running until then so recovery can happen."""
-        ends = [s.times[-1] for s in self.series if s.times]
-        return min(ends) if ends else None
-
-    def history(self, station_id: str, now: datetime, hours: int = 48, metrics: list[str] | None = None) -> list[dict]:
-        s = next((s for s in self.series if s.station.id == station_id), None)
-        if s is None:
-            return []
-        rows = s.window(now - timedelta(hours=hours), now)
-        step = max(1, len(rows) // 400)  # keep charts light
-        return [
-            {
-                "observed_at": t.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "readings": {k: v for k, v in row.items() if k != "t" and (not metrics or k in metrics)},
-            }
-            for t, row in rows[::step]
-        ]
 
     def risk_facts(self, now: datetime, lat: float, lon: float) -> dict:
         """Inputs for engine.risk.RiskInputs: sensor_flag, sustained_wind_mph, sensors_all_clear."""

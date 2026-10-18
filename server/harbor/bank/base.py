@@ -15,8 +15,6 @@ TxKind = Literal["transfers", "withdrawals", "deposits"]
 
 
 class NessieError(Exception):
-    retryable = False
-
     def __init__(self, message: str, status: int | None = None):
         super().__init__(message)
         self.message = message
@@ -25,8 +23,6 @@ class NessieError(Exception):
 
 class NessieUnavailable(NessieError):
     """Timeouts, connection errors and 5xx: try again later."""
-
-    retryable = True
 
 
 class NessieNotFound(NessieError):
@@ -76,8 +72,6 @@ class BankWrite:
 
 class Bank(ABC):
     """The bank interface (NessieClient; tests use a double). Ids are Nessie ids."""
-
-    kind: str = "base"
 
     # --- Customers and accounts
     @abstractmethod

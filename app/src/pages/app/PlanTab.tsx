@@ -6,7 +6,7 @@ import { dudes } from '../../lib/assets.ts';
 import { duration, moneyRound, pct, when } from '../../lib/format.ts';
 import type { AdviceStep } from '../../lib/types.ts';
 import { Line, Phase, Track } from './journey.tsx';
-import { ActionButton } from './ui.tsx';
+import { ActionButton, ApproveButton } from './ui.tsx';
 import { type HarborData, useDashboard } from './useHarbor.ts';
 
 function headline({ storm, guide }: HarborData): string {
@@ -41,14 +41,7 @@ function Banner({ d }: { d: HarborData }) {
         </Link>
       )}
       {plan?.status === 'awaiting_approval' && (
-        <ActionButton
-          className="btn"
-          action={() => api.approve(plan.version)}
-          done="Plan approved. Harbor is moving your money."
-        >
-          Approve {moneyRound(plan.budget.total_cents)}
-          <Icon name="arrow" />
-        </ActionButton>
+        <ApproveButton plan={plan} done="Plan approved. Harbor is moving your money." />
       )}
     </section>
   );

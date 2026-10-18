@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import datetime
 
+from harbor.clock import iso
 from harbor.engine.plan import fuel_line, lodging_line
 from harbor.evac import destination as dest_mod
 from harbor.evac import lodging as lodging_mod
@@ -13,6 +14,7 @@ from harbor.evac.atms import rank_atms
 from harbor.evac.household import Household, budget_lines
 from harbor.evac.household import guide as household_guide
 from harbor.evac.route import DRIVE_NOTE, find_route, maps_links
+from harbor.geo import feature_collection, point
 
 NIGHTS_DEFAULT = 3  # Harbor estimate for a Milton-sized storm
 
@@ -22,18 +24,6 @@ GOUGING_CARD = {
     "text": "Book a refundable room early and screenshot the price. If a quote looks far above normal, "
     "report it to the Florida Attorney General: 1-866-9-NO-SCAM.",
 }
-
-
-def _iso(dt: datetime | None) -> str | None:
-    return None if dt is None else dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _fc(features: list[dict]) -> dict:
-    return {"type": "FeatureCollection", "features": features}
-
-
-def _point(lat: float, lon: float, **props) -> dict:
-    return {"type": "Feature", "geometry": {"type": "Point", "coordinates": [lon, lat]}, "properties": props}
 
 
 def build_guide(
@@ -48,9 +38,7 @@ def build_guide(
     ts_winds_eta: datetime | None = None,
     demo: bool = True,
     ors_key: str = "",
-    band: str = "standard",
     choose: str | None = None,
-    meals_source: str | None = None,
 ) -> dict:
     hh = household_guide(household)
 
@@ -92,7 +80,7 @@ def build_guide(
             "links": maps_links(origin[0], origin[1], chosen.destination.lat, chosen.destination.lon),
             "attribution": r.attribution,
         }
-        lodging = lodging_mod.plan_lodging(chosen.destination, origin, nights, hh.rooms, hh.shelter_filter, band)
+        lodging = lodging_mod.plan_lodging(chosen.destination, origin, nights, hh.rooms, hh.shelter_filter)
         lodging_json = lodging.to_api()
         place = chosen.destination.name.split(",")[0]
         lines = [
@@ -100,7 +88,7 @@ def build_guide(
             fuel_line(2 * r.distance_mi),
         ]
         meals_cents = chosen.destination.meals_cents
-        source = meals_source or chosen.destination.basis
+        source = chosen.destination.basis
     else:
         meals_cents, source = 6_800, "GSA per diem FY2025 standard rate"
     lines += budget_lines(household, days=nights, nights=nights, meals_rate_cents=meals_cents, meals_source=source)
@@ -114,7 +102,7 @@ def build_guide(
             "drive_time_min_normal": o.route.drive_time_min_normal,
             "drive_time_min_evac": o.route.drive_time_min_evac,
             "outside_cone": o.outside_cone,
-            "leave_by": _iso(o.leave_by),
+            "leave_by": iso(o.leave_by),
             "feasible": o.feasible,
             "recommended": o.recommended,
         }
@@ -122,9 +110,9 @@ def build_guide(
     ]
 
     guide = {
-        "server_time": _iso(now),
+        "server_time": iso(now),
         "decision": {"action": decision.action, "tier": decision.tier, "reason_codes": decision.reason_codes},
-        "leave_by": _iso(chosen.leave_by) if chosen else None,
+        "leave_by": iso(chosen.leave_by) if chosen else None,
         "destinations": destinations,
         "chosen": chosen.destination.id if chosen else None,
         "route": route_json,
@@ -136,10 +124,10 @@ def build_guide(
     }
 
     atms = rank_atms(
-        origin, cone=dest_mod._to_shape(cone), route_geometry=chosen.route.geometry if chosen and chosen.route else None
+        origin, cone=dest_mod.to_shape(cone), route_geometry=chosen.route.geometry if chosen and chosen.route else None
     )
     layers = {
-        "route": _fc(
+        "route": feature_collection(
             [
                 {
                     "type": "Feature",
@@ -150,7 +138,7 @@ def build_guide(
             if chosen and chosen.route.geometry
             else []
         ),
-        "route_options": _fc(
+        "route_options": feature_collection(
             [
                 {
                     "type": "Feature",
@@ -166,9 +154,9 @@ def build_guide(
                 if o.feasible and o.route and o.route.geometry
             ][:4]
         ),
-        "destinations": _fc(
+        "destinations": feature_collection(
             [
-                _point(
+                point(
                     d["location"]["lat"],
                     d["location"]["lon"],
                     id=d["id"],
@@ -179,15 +167,15 @@ def build_guide(
                 for d in destinations
             ]
         ),
-        "shelters": _fc(
+        "shelters": feature_collection(
             [
-                _point(s.lat, s.lon, id=s.id, name=s.name, kind=s.kind, status=s.status, pets=s.pets, ada=s.ada)
+                point(s.lat, s.lon, id=s.id, name=s.name, kind=s.kind, status=s.status, pets=s.pets, ada=s.ada)
                 for s in shelters
             ]
         ),
-        "lodging": _fc(
+        "lodging": feature_collection(
             [
-                _point(
+                point(
                     o["location"]["lat"],
                     o["location"]["lon"],
                     id=o["id"],
@@ -199,9 +187,9 @@ def build_guide(
             ]
         ),
     }
-    layers["atms"] = _fc(
+    layers["atms"] = feature_collection(
         [
-            _point(
+            point(
                 a["location"]["lat"],
                 a["location"]["lon"],
                 id=a["id"],

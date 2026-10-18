@@ -39,7 +39,6 @@ class Destination:
     lodging_cents: int
     meals_cents: int
     basis: str
-    rate_checked: bool
 
 
 @dataclass
@@ -81,13 +80,12 @@ def load_destinations() -> tuple[Destination, ...]:
             r["lodging_cents"],
             r["meals_cents"],
             r["basis"],
-            r.get("rate_checked", False),
         )
         for r in rows
     )
 
 
-def _to_shape(geo):
+def to_shape(geo):
     if geo is None:
         return None
     if isinstance(geo, dict):
@@ -117,7 +115,7 @@ def decide(
     candidates = candidates if candidates is not None else load_destinations()
     needs = route_needs(household)
     reasons = evacuation_reasons(household)
-    cone_shape, track_shape = _to_shape(cone), _to_shape(track)
+    cone_shape, track_shape = to_shape(cone), to_shape(track)
     if category is not None and category >= 4:
         reasons.append("CAT4_PLUS")
     elif (

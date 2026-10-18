@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from sqlmodel import Session, col, select
 
 from harbor.clock import iso
-from harbor.context import evacuation_for, household_of, storm_inputs
+from harbor.context import evacuation_for, storm_inputs
 from harbor.engine import calendar as cal
 from harbor.engine.plan import (
     Balances,
@@ -23,10 +23,10 @@ from harbor.engine.plan import (
     SoldPosition,
     build_plan,
     build_restore,
+    money,
 )
-from harbor.evac.household import budget_lines
 from harbor.events import record
-from harbor.models import DEFAULT_SETTINGS, Account, Bill, Event, Lot, Move, Plan, User
+from harbor.models import Account, Bill, Event, Lot, Move, Plan, User
 from harbor.provisioning import user_accounts
 from harbor.sources.market import FixturePrices
 
@@ -43,10 +43,6 @@ def prices() -> FixturePrices:
     if _prices is None:
         _prices = FixturePrices()
     return _prices
-
-
-def _money(cents: int) -> str:
-    return f"${cents / 100:,.2f}".replace(".00", "")
 
 
 # --- Queries
@@ -77,19 +73,19 @@ def level_at(session: Session, user: User, t: datetime) -> str:
 # --- Create
 def _template_summary(user: User, storm_name: str | None, draft, cash_needed_by: datetime) -> str:
     s = draft.sources
-    parts = [f"{_money(s['already_in_checking_cents'])} already in checking"]
+    parts = [f"{money(s['already_in_checking_cents'])} already in checking"]
     if s["from_savings_cents"]:
-        parts.append(f"{_money(s['from_savings_cents'])} from savings")
+        parts.append(f"{money(s['from_savings_cents'])} from savings")
     if s["from_etf_sales_cents"]:
-        parts.append(f"{_money(s['from_etf_sales_cents'])} from selling ETF shares")
+        parts.append(f"{money(s['from_etf_sales_cents'])} from selling ETF shares")
     storm = storm_name or "The storm"
     text = (
-        f"{storm} could bring dangerous winds to your area. Harbor proposes gathering {_money(draft.total_cents)} "
+        f"{storm} could bring dangerous winds to your area. Harbor proposes gathering {money(draft.total_cents)} "
         f"for your evacuation: {', '.join(parts)}. The cash is ready by "
         f"{draft.facts['cash_needed_by_display']}."
     )
     if draft.shortfall_cents:
-        text += f" That still leaves {_money(draft.shortfall_cents)} short, so help resources are listed below."
+        text += f" That still leaves {money(draft.shortfall_cents)} short, so help resources are listed below."
     return text
 
 
@@ -105,28 +101,11 @@ def create_plan(app, session: Session, user: User, now: datetime, storm_id: str 
     lots = session.exec(select(Lot).where(Lot.user_id == user.id, col(Lot.sold_at).is_(None))).all()
     price_map = prices().prices_at({lot.symbol for lot in lots}, now)
     lots = [lot for lot in lots if lot.symbol in price_map]
-    settings = {**DEFAULT_SETTINGS, **(user.settings or {})}
-    if bundle:
-        lines = tuple(bundle["budget_lines"])
-    else:
-        lines = tuple(
-            budget_lines(
-                household_of(session, user),
-                days=3,
-                nights=3,
-                meals_rate_cents=6_800,
-                meals_source="GSA per diem FY2025 standard rate",
-            )
-        )
     inputs = PlanInputs(
         now=now,
         cash_needed_by=cash_needed_by,
-        lines=lines,
-        balances=Balances(
-            accounts["checking"].balance_cents,
-            accounts["savings"].balance_cents,
-            accounts["brokerage_cash"].balance_cents if "brokerage_cash" in accounts else 0,
-        ),
+        lines=tuple(bundle["budget_lines"]),
+        balances=Balances(accounts["checking"].balance_cents, accounts["savings"].balance_cents),
         lots=tuple(LotIn(l.id, l.symbol, l.shares_micro, l.cost_basis_cents, l.acquired) for l in lots),
         prices_cents=price_map,
         bills=tuple(
@@ -134,8 +113,8 @@ def create_plan(app, session: Session, user: User, now: datetime, storm_id: str 
             for b in session.exec(select(Bill).where(Bill.user_id == user.id, Bill.status == "pending")).all()
         ),
         settings=PlanSettings(
-            max_etf_sell_cents=settings["max_etf_sell_cents"],
-            cancel_window=timedelta(minutes=settings["cancel_window_minutes"]),
+            max_etf_sell_cents=user.settings["max_etf_sell_cents"],
+            cancel_window=timedelta(minutes=user.settings["cancel_window_minutes"]),
         ),
     )
     draft = build_plan(inputs)
@@ -209,7 +188,7 @@ def create_plan(app, session: Session, user: User, now: datetime, storm_id: str 
         user.id,
         now,
         "plan_created",
-        f"Harbor made an evacuation plan: {_money(draft.total_cents)}. Review and approve it.",
+        f"Harbor made an evacuation plan: {money(draft.total_cents)}. Review and approve it.",
         {"plan_id": plan.id, "total_cents": draft.total_cents, "shortfall_cents": draft.shortfall_cents},
     )
     return plan
@@ -217,21 +196,19 @@ def create_plan(app, session: Session, user: User, now: datetime, storm_id: str 
 
 # --- Demo clock: wait for the human
 def pause_for_approval(app) -> None:
-    """In a replay, pause the clock while a plan awaits approval (a manual pause is left alone)."""
-    clock = getattr(app.state, "clock", None)
-    if getattr(clock, "storm", None) is not None and clock.running and hasattr(clock, "pause"):
-        clock.pause("awaiting_approval")
+    """In a replay, pause the clock while a plan awaits approval."""
+    if getattr(app.state.clock, "running", False):
+        app.state.clock.pause("awaiting_approval")
 
 
 def resume_after_approval(app) -> None:
-    clock = getattr(app.state, "clock", None)
-    if getattr(clock, "paused_reason", None) == "awaiting_approval":
-        clock.resume()
+    if getattr(app.state.clock, "paused_reason", None) == "awaiting_approval":
+        app.state.clock.resume()
 
 
 # --- Approve and cancel
 def approve(session: Session, user: User, plan: Plan, now: datetime) -> Plan:
-    window = timedelta(minutes={**DEFAULT_SETTINGS, **(user.settings or {})}["cancel_window_minutes"])
+    window = timedelta(minutes=user.settings["cancel_window_minutes"])
     earliest = now + window
     for m in plan_moves(session, plan.id):
         if m.status != "proposed":
@@ -259,20 +236,6 @@ def approve(session: Session, user: User, plan: Plan, now: datetime) -> Plan:
     return plan
 
 
-def cancel_move(session: Session, user: User, move: Move, now: datetime) -> Move:
-    move.status = "cancelled"
-    session.add(move)
-    record(
-        session,
-        user.id,
-        now,
-        "move_cancelled",
-        f"Cancelled: {move.kind.replace('_', ' ')} of {_money(move.amount_cents)}.",
-        {"move_id": move.id, "plan_id": move.plan_id},
-    )
-    return move
-
-
 def cancel_unrun(session: Session, plan: Plan) -> int:
     n = 0
     for m in plan_moves(session, plan.id):
@@ -284,7 +247,7 @@ def cancel_unrun(session: Session, plan: Plan) -> int:
 
 
 # --- Stand-down and restore
-def _done_money(session: Session, plan: Plan) -> list[Move]:
+def _donemoney(session: Session, plan: Plan) -> list[Move]:
     return [
         m for m in plan_moves(session, plan.id) if m.kind in MONEY_KINDS and m.status in ("done", "pending_settlement")
     ]
@@ -293,14 +256,14 @@ def _done_money(session: Session, plan: Plan) -> list[Move]:
 def start_restore(session: Session, user: User, plan: Plan, now: datetime, reason: str) -> None:
     """Cancel what hasn't run and schedule moving unspent money back to savings."""
     cancel_unrun(session, plan)
-    done = _done_money(session, plan)
+    done = _donemoney(session, plan)
     if not done:
         plan.status = "expired" if plan.status == "awaiting_approval" else "cancelled"
         session.add(plan)
         record(session, user.id, now, "plan_expired", f"The plan was closed: {reason}", {"plan_id": plan.id})
         return
     accounts = accounts_by_type(session, user.id)
-    before = ((plan.ai or {}).get("facts") or {}).get("balances", {}).get("checking_cents", 0)  # balance when planned
+    before = plan.ai["facts"]["balances"]["checking_cents"]  # balance when planned
     sold = tuple(
         SoldPosition(
             m.symbol,
@@ -312,7 +275,6 @@ def start_restore(session: Session, user: User, plan: Plan, now: datetime, reaso
         for m in done
         if m.kind == "sell_etf"
     )
-    settings = {**DEFAULT_SETTINGS, **(user.settings or {})}
     draft = build_restore(
         RestoreInputs(
             now=now,
@@ -321,7 +283,7 @@ def start_restore(session: Session, user: User, plan: Plan, now: datetime, reaso
             moved_from_savings_cents=sum(m.amount_cents for m in done if m.kind == "transfer"),
             sold=sold,
             prices_cents=prices().prices_at({p.symbol for p in sold}, now),
-            rebuy_opt_in=settings["rebuy_opt_in"],
+            rebuy_opt_in=user.settings["rebuy_opt_in"],
         )
     )
     seq = len(plan_moves(session, plan.id))
@@ -347,10 +309,10 @@ def start_restore(session: Session, user: User, plan: Plan, now: datetime, reaso
             )
         )
     plan.status = "restoring" if draft.moves else "restored"
-    plan.warnings = [*(plan.warnings or []), *draft.warnings]
+    plan.warnings = [*plan.warnings, *draft.warnings]
     session.add(plan)
     msg = (
-        f"{reason} Harbor is moving {_money(sum(m.amount_cents for m in draft.moves))} back to savings."
+        f"{reason} Harbor is moving {money(sum(m.amount_cents for m in draft.moves))} back to savings."
         if draft.moves
         else f"{reason} There was nothing to move back."
     )
@@ -408,7 +370,6 @@ def move_to_api(m: Move) -> dict:
         "arrives_late": m.arrives_late,
         "requires_explicit_approval": m.requires_explicit_approval,
         "depends_on": m.depends_on or [],
-        "reverses_move_id": m.reverses_move_id,
         "why": m.why,
         "nessie_object_id": m.nessie_object_id,
         "nessie_object_type": m.nessie_object_type,
@@ -439,5 +400,5 @@ def plan_to_api(session: Session, plan: Plan, now: datetime) -> dict:
         "summary": plan.summary,
         "tax_note": plan.tax_note,
         "warnings": plan.warnings or [],
-        "ai": {k: v for k, v in (plan.ai or {}).items() if k != "facts"},
+        "ai": {k: v for k, v in plan.ai.items() if k != "facts"},
     }

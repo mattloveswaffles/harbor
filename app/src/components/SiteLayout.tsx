@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from 'react-rou
 import { mark } from '../lib/assets.ts';
 import { ScrollEffects } from './ScrollEffects.tsx';
 
-const DOCS = 'https://github.com/mattloveswaffles/harbor/blob/main/docs';
+export const DOCS = 'https://github.com/mattloveswaffles/harbor/blob/main/docs';
 
 export function Brand() {
   return (

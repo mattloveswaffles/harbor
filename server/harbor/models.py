@@ -1,13 +1,13 @@
 """SQLModel tables. Money in cents, shares in millionths, times in UTC."""
 
 import secrets
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import JSON, Column, DateTime, TypeDecorator
 from sqlmodel import Field, SQLModel
 
-from harbor.clock import UTC, utc
+from harbor.clock import utc
 
 
 def new_id(prefix: str) -> str:
@@ -115,7 +115,6 @@ class Plan(SQLModel, table=True):
     tax_note: str | None = None
     warnings: list | None = json_col()
     ai: dict | None = json_col()
-    inputs_hash: str | None = None
 
 
 class Move(SQLModel, table=True):
@@ -139,9 +138,7 @@ class Move(SQLModel, table=True):
     arrives_late: bool = False
     requires_explicit_approval: bool = False
     depends_on: list | None = json_col()
-    reverses_move_id: str | None = None
     why: str | None = None
-    nessie_request_tag: str | None = None  # written before the POST so reconcile can find it
     nessie_object_id: str | None = None
     nessie_object_type: str | None = None
     attempts: int = 0

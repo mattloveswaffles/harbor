@@ -1,31 +1,21 @@
 // Route: the map, when to leave, where to go and what's on the way.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Icon } from '../../components/Icon.tsx';
 import { api } from '../../lib/api.ts';
 import { brands, dudes } from '../../lib/assets.ts';
 import { duration, moneyRound, when } from '../../lib/format.ts';
 import type { Atm } from '../../lib/types.ts';
 import { routeMap } from './harborMap.ts';
-import { Quiet, ZoomButtons } from './ui.tsx';
+import { Quiet, useMap, ZoomButtons } from './ui.tsx';
 import { useDashboard } from './useHarbor.ts';
 
 export default function RouteTab() {
   const { data, act } = useDashboard();
   const { guide } = data;
-  const el = useRef<HTMLDivElement>(null);
-  const map = useRef<ReturnType<typeof routeMap>>(null);
   const [atms, setAtms] = useState<Atm[]>([]);
   const choose = (id: string) => act(() => api.chooseDestination(id), 'Destination updated.');
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the map is made once; `choose` only needs `act`
-  useEffect(() => {
-    if (!el.current) return;
-    map.current = routeMap(el.current, choose);
-    return () => {
-      map.current?.remove();
-      map.current = null;
-    };
-  }, []);
+  const { el, map } = useMap((host) => routeMap(host, choose));
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `map` is a ref
   useEffect(() => map.current?.draw(data.map.layers, guide?.chosen ?? null), [data.map, guide?.chosen]);
   useEffect(() => {
     if (guide) api.atms().then(setAtms, () => undefined);

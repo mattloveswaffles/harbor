@@ -7,8 +7,13 @@ from sqlmodel import Session
 
 from harbor.clock import iso
 from harbor.events import MAX_STREAMS_PER_USER, bus, record
+from tests.households import make_household
 
 API = "/api/v1"
+
+
+def token(user: dict) -> str:
+    return user["auth"]["Authorization"].removeprefix("Bearer ")
 
 
 def add_event(app, user_id, type_="sensor_alert", message="test event", data=None):
@@ -96,7 +101,7 @@ def test_demo_reset_event_is_pushed(client, maria, app):
 class Stream:
     """Calls the ASGI app directly and reads the SSE body as it arrives (TestClient buffers)."""
 
-    def __init__(self, app, user_id, last_event_id=None):
+    def __init__(self, app, token, last_event_id=None):
         self.app = app
         headers = [(b"host", b"test"), (b"accept", b"text/event-stream")]
         if last_event_id is not None:
@@ -109,7 +114,7 @@ class Stream:
             "scheme": "http",
             "path": f"{API}/me/events/stream",
             "raw_path": f"{API}/me/events/stream".encode(),
-            "query_string": f"user_id={user_id}".encode(),
+            "query_string": f"token={token}".encode(),
             "headers": headers,
             "root_path": "",
             "client": ("test", 1),
@@ -168,19 +173,19 @@ class Stream:
                 return (ids[0] if ids else None), json.loads("\n".join(data))
 
 
-def test_stream_rejects_an_unknown_user(app, client):
+def test_stream_rejects_an_unknown_token(app, client):
     async def run():
-        async with Stream(app, "usr_nobody") as s:
+        async with Stream(app, "hbr_nobody") as s:
             assert s.status == 401
             msg = await asyncio.wait_for(s.messages.get(), 5)
-            assert json.loads(msg["body"])["error"]["code"] == "user_not_found"
+            assert json.loads(msg["body"])["error"]["code"] == "invalid_token"
 
     asyncio.run(run())
 
 
 def test_stream_pushes_new_events_instantly(app, maria, client):
     async def run():
-        async with Stream(app, maria["id"]) as s:
+        async with Stream(app, token(maria)) as s:
             assert s.status == 200 and s.headers["content-type"].startswith("text/event-stream")
             first = await s.frame()
             assert ": connected" in first and "retry: 3000" in first
@@ -198,7 +203,7 @@ def test_stream_replays_after_last_event_id_then_goes_live(app, maria, client):
     seqs = [add_event(app, maria["id"], message=f"e{i}") for i in range(4)]
 
     async def run():
-        async with Stream(app, maria["id"], last_event_id=seqs[1]) as s:
+        async with Stream(app, token(maria), last_event_id=seqs[1]) as s:
             await s.frame()  # connected
             replayed = [await s.event() for _ in range(2)]
             assert [d["message"] for _, d in replayed] == ["e2", "e3"]
@@ -212,11 +217,11 @@ def test_stream_replays_after_last_event_id_then_goes_live(app, maria, client):
 
 def test_last_event_id_can_be_an_event_id(app, maria, client):
     add_event(app, maria["id"], message="old")
-    feed = client.get(f"{API}/me/events?limit=1", headers={"X-User-Id": maria["id"]}).json()
+    feed = client.get(f"{API}/me/events?limit=1", headers=maria["auth"]).json()
     add_event(app, maria["id"], message="newer")
 
     async def run():
-        async with Stream(app, maria["id"], last_event_id=feed[0]["id"]) as s:
+        async with Stream(app, token(maria), last_event_id=feed[0]["id"]) as s:
             await s.frame()
             _, data = await s.event()
             assert data["message"] == "newer"
@@ -230,7 +235,7 @@ def test_stream_sends_a_ping_when_idle(app, maria, client, monkeypatch):
     monkeypatch.setattr(fastapi.routing, "_PING_INTERVAL", 0.05)
 
     async def run():
-        async with Stream(app, maria["id"]) as s:
+        async with Stream(app, token(maria)) as s:
             await s.frame()  # connected
             assert (await s.frame()).strip() == ": ping"
 
@@ -238,10 +243,10 @@ def test_stream_sends_a_ping_when_idle(app, maria, client, monkeypatch):
 
 
 def test_events_from_another_user_are_not_streamed(app, maria, client):
-    other = client.post(f"{API}/users", json={"name": "Sam", "zip": "33602"}).json()
+    other = make_household(client, "ruth")
 
     async def run():
-        async with Stream(app, maria["id"]) as s:
+        async with Stream(app, token(maria)) as s:
             await s.frame()
             await asyncio.to_thread(add_event, app, other["id"], message="not yours")
             await asyncio.to_thread(add_event, app, maria["id"], message="yours")

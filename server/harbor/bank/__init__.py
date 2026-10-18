@@ -4,7 +4,6 @@ from fastapi import Request
 
 from harbor.bank.base import (
     Bank,
-    BankWrite,
     NessieConfigError,
     NessieError,
     NessieNotFound,
@@ -18,7 +17,6 @@ from harbor.bank.nessie import NessieClient
 
 __all__ = [
     "Bank",
-    "BankWrite",
     "NessieClient",
     "NessieConfigError",
     "NessieError",

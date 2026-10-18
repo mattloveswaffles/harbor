@@ -122,19 +122,19 @@ def _from_household(user: User, hh: Household) -> ProfileData:
     """A starting profile for users who never opened Settings."""
     people = [Person(name=user.name, relation="you")]
     people += [Person(name=f"Adult {i + 2}") for i in range(max(hh.adults - 1, 0))]
-    people += [Person(name=f"Child {i + 1}", age=age) for i, age in enumerate(hh.children_ages or [])]
+    people += [Person(name=f"Child {i + 1}", age=age) for i, age in enumerate(hh.children_ages)]
     people += [Person(name=f"Senior {i + 1}", age=70) for i in range(hh.seniors)]
-    med = hh.medical or {}
+    med = hh.medical
     return ProfileData(
         personal=Personal(name=user.name),
         home=Home(home_type="mobile" if hh.home_type == "mobile" else "house", evac_zone=hh.evac_zone),
         people=people,
-        pets=[Pet(type=p.get("type", "pet")) for p in hh.pets or [] for _ in range(p.get("count", 1))],
+        pets=[Pet(type=p["type"]) for p in hh.pets for _ in range(p["count"])],
         medical=Medical(
-            needs_power=bool(med.get("power_dependent_device")),
-            oxygen=bool(med.get("oxygen")),
-            dialysis=bool(med.get("dialysis")),
-            refrigerated_meds=bool(med.get("refrigerated_meds")),
+            needs_power=med["power_dependent_device"],
+            oxygen=med["oxygen"],
+            dialysis=med["dialysis"],
+            refrigerated_meds=med["refrigerated_meds"],
             mobility=hh.mobility,
         ),
         vehicle=Vehicle(has_car=hh.has_car),
@@ -145,7 +145,7 @@ def load(session: Session, user: User) -> ProfileData:
     row = session.get(Profile, user.id)
     if row and row.data:
         return ProfileData.model_validate(row.data)
-    return _from_household(user, session.get(Household, user.id) or Household(user_id=user.id))
+    return _from_household(user, session.get(Household, user.id))
 
 
 def preferred_destination(session: Session, user: User) -> str | None:
@@ -160,7 +160,7 @@ def preferred_destination(session: Session, user: User) -> str | None:
 
 def choice(session: Session, user: User) -> str | None:
     """The destination the family picked on Route, else their own place to go."""
-    return (user.settings or {}).get("evac_destination") or preferred_destination(session, user)
+    return user.settings.get("evac_destination") or preferred_destination(session, user)
 
 
 def save(session: Session, user: User, data: ProfileData, now: datetime) -> None:
@@ -169,7 +169,7 @@ def save(session: Session, user: User, data: ProfileData, now: datetime) -> None
     row.data, row.updated_at = data.model_dump(), now
     session.add(row)
 
-    hh = session.get(Household, user.id) or Household(user_id=user.id)
+    hh = session.get(Household, user.id)
     if data.people:
         ages = [p.age for p in data.people]
         hh.children_ages = sorted(a for a in ages if a is not None and a < 18)

@@ -1,8 +1,9 @@
 """Runs approved moves exactly once.
 
-Each move's tag is saved before its bank write, so retries never double-send. A move waits while the
-user is in shelter or a dependency is unfinished. ETF sales settle T+1, then deposit and transfer to
-checking. Bank outages retry later; refusals fail the move. Moves are dated with their scheduled day.
+Each attempt is saved before its bank write, and bank writes are tagged with the move id, so retries never
+double-send. A move waits while the user is in shelter or a dependency is unfinished. ETF sales settle T+1,
+then deposit and transfer to checking. Bank outages retry later; refusals fail the move. Moves are dated with
+their scheduled day.
 """
 
 from __future__ import annotations
@@ -12,17 +13,13 @@ from datetime import date, datetime
 from sqlmodel import Session, col, select
 
 from harbor.bank import NessieError, NessieUnavailable
-from harbor.bank.base import tag_for
 from harbor.clock import iso
+from harbor.engine.plan import money
 from harbor.events import record
 from harbor.models import Bill, Lot, Move, Plan, User
 from harbor.planning import MONEY_KINDS, accounts_by_type, level_at, plan_moves
 
 RUNNABLE_PLANS = ("approved", "running", "restoring")
-
-
-def _money(cents: int) -> str:
-    return f"${cents / 100:,.2f}".replace(".00", "")
 
 
 async def _refresh(session: Session, bank, accounts) -> None:
@@ -75,7 +72,7 @@ async def _execute(session: Session, bank, user: User, move: Move, now: datetime
             move_id=move.id,
             memo="Harbor: savings to checking for evacuation",
         )
-        msg = f"Moved {_money(move.amount_cents)} from savings to checking."
+        msg = f"Moved {money(move.amount_cents)} from savings to checking."
     elif move.kind == "withdraw_cash":
         w = await bank.withdraw(
             chk.nessie_id, move.amount_cents, rounding="up20", on=on, move_id=move.id, memo="Harbor: evacuation cash"
@@ -91,7 +88,7 @@ async def _execute(session: Session, bank, user: User, move: Move, now: datetime
             move_id=move.id,
             memo="Harbor: unspent evacuation money back to savings",
         )
-        msg = f"Moved {_money(move.amount_cents)} you didn't spend back to savings."
+        msg = f"Moved {money(move.amount_cents)} you didn't spend back to savings."
     elif move.kind == "sell_etf":
         _sell_lots(session, move, now)
         move.status = "pending_settlement"
@@ -132,7 +129,7 @@ async def _execute(session: Session, bank, user: User, move: Move, now: datetime
         await _refresh(session, bank, [chk, brk])
         return f"Bought back {(move.shares_micro or 0) / 1_000_000:.2f} shares of {move.symbol}."
     elif move.kind == "defer_bill":
-        bill = session.get(Bill, (move.extra or {}).get("bill_id"))
+        bill = session.get(Bill, move.extra["bill_id"])
         if bill is None or not bill.nessie_id:
             raise ValueError("the bill is no longer in Nessie")
         to_date = date.fromisoformat(move.extra["to_date"])
@@ -178,7 +175,7 @@ async def _settle(session: Session, bank, user: User, move: Move) -> str:
     move.status = "done"
     session.add(move)
     await _refresh(session, bank, [chk, brk])
-    return f"The {move.symbol} sale settled: {_money(move.amount_cents)} is now in checking."
+    return f"The {move.symbol} sale settled: {money(move.amount_cents)} is now in checking."
 
 
 def _update_plan_status(session: Session, plan: Plan, user: User, now: datetime) -> None:
@@ -264,7 +261,6 @@ async def run_due(app, now: datetime | None = None) -> int:
                 continue
             move.attempts += 1
             move.last_attempt_at = now
-            move.nessie_request_tag = move.nessie_request_tag or tag_for(move.id)
             session.add(move)
             session.commit()  # intent is saved before the bank call
             try:

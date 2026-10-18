@@ -8,7 +8,16 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from harbor.auth import LoginLimiter, hash_password, verify_password
-from harbor.evac.household import Household, Pet, budget_lines, guide, rooms_needed
+from harbor.evac.household import (
+    Household,
+    Pet,
+    budget_lines,
+    evacuation_reasons,
+    guide,
+    needs,
+    rooms_needed,
+    route_needs,
+)
 from harbor.geo import lookup_zip
 from harbor.main import create_app
 from harbor.models import AuthToken, Credential, Lot
@@ -36,8 +45,7 @@ def test_signup_returns_a_token_that_works_everywhere(client, bank):
     assert body["token"].startswith("hbr_") and body["token_type"] == "bearer"
     assert body["user"]["name"] == "Sam Rivera" and body["user"]["zip"] == "33602"
     h = bearer(body["token"])
-    assert client.get(f"{API}/auth/me", headers=h).json()["id"] == body["user"]["id"]
-    assert client.get(f"{API}/me", headers=h).status_code == 200
+    assert client.get(f"{API}/me", headers=h).json()["id"] == body["user"]["id"]
     accounts = client.get(f"{API}/me/accounts", headers=h).json()
     assert {a["type"] for a in accounts} == {"checking", "savings", "brokerage_cash"}
     # The email never reaches Nessie: the bank only sees a pseudonym.
@@ -58,8 +66,8 @@ def test_duplicate_email_and_bad_input(client):
     signup(client)
     dup = client.post(f"{API}/auth/signup", json={**SIGNUP, "email": "sam.rivera@example.com"})
     assert dup.status_code == 409 and dup.json()["error"]["code"] == "email_taken"
-    assert client.post(f"{API}/auth/signup", json={**SIGNUP, "email": "b@x.co", "password": "short"}).status_code == 422
-    assert client.post(f"{API}/auth/signup", json={**SIGNUP, "email": "not-an-email"}).status_code == 422
+    assert client.post(f"{API}/auth/signup", json={**SIGNUP, "email": "b@x.co", "password": "abc"}).status_code == 422
+    assert client.post(f"{API}/auth/signup", json={**SIGNUP, "email": "not an email"}).status_code == 422
     bad_zip = client.post(f"{API}/auth/signup", json={**SIGNUP, "email": "c@x.co", "zip": "00000"})
     assert bad_zip.status_code == 400 and bad_zip.json()["error"]["code"] == "zip_not_supported"
 
@@ -113,27 +121,20 @@ def test_expired_and_garbage_tokens_are_refused(client, app):
     assert client.get(f"{API}/me").json()["error"]["code"] == "auth_required"
 
 
-def test_live_mode_needs_a_real_login(tmp_path, bank):
+def test_live_mode_logs_in_the_same_way(tmp_path, bank):
     app = create_app(make_settings(tmp_path, harbor_mode="live"), bank=bank)
     with TestClient(app) as c:
         body = signup(c)
         assert c.get(f"{API}/me", headers=bearer(body["token"])).status_code == 200
-        res = c.get(f"{API}/me", headers={"X-User-Id": body["user"]["id"]})
-        assert res.status_code == 401 and res.json()["error"]["code"] == "auth_required"  # no impersonating by id
-        assert c.post(f"{API}/users", json={"name": "X", "zip": "33602"}).status_code == 403
 
 
 def test_live_stream_accepts_a_token(app, client):
     token = signup(client)["token"]
 
     async def run():
-        s = Stream(app, "ignored")
-        s.scope["query_string"] = f"token={token}".encode()
-        async with s:
+        async with Stream(app, token) as s:
             assert s.status == 200
-        bad = Stream(app, "ignored")
-        bad.scope["query_string"] = b"token=hbr_nope"
-        async with bad:
+        async with Stream(app, "hbr_nope") as bad:
             assert bad.status == 401
 
     asyncio.run(run())
@@ -174,9 +175,8 @@ def test_zip_must_be_five_digits(client):
 
 
 def test_sign_up_creates_user_accounts_and_portfolio(client, bank, app):
-    res = client.post(f"{API}/users", json={"name": "Ana Real-Person", "zip": "33901"})
-    assert res.status_code == 201, res.text
-    user = res.json()
+    body = signup(client, name="Ana Real-Person", zip="33901")
+    user = body["user"]
     assert user["id"].startswith("usr_")
     assert user["location"] == {"lat": LAT_33901, "lon": LON_33901}
     assert user["location_source"] == "zcta"
@@ -194,7 +194,7 @@ def test_sign_up_creates_user_accounts_and_portfolio(client, bank, app):
     assert cust["first_name"] == "Harbor" and cust["last_name"] == f"User {user['id']}"
     assert "Ana" not in str(bank.customers)
 
-    accounts = client.get(f"{API}/me/accounts", headers={"X-User-Id": user["id"]}).json()
+    accounts = client.get(f"{API}/me/accounts", headers=bearer(body["token"])).json()
     assert [(a["type"], a["nessie_type"], a["nickname"], a["balance_cents"]) for a in accounts] == [
         ("checking", "Checking", "Everyday", 42000),
         ("savings", "Savings", "Emergency fund", 50000),
@@ -206,19 +206,17 @@ def test_sign_up_creates_user_accounts_and_portfolio(client, bank, app):
 
 
 def test_sign_up_with_gps_and_household(client):
-    body = {
-        "name": "Sam",
-        "zip": "33602",
-        "location": {"lat": 27.96, "lon": -82.46},
-        "household": {
+    user = signup(
+        client,
+        location={"lat": 27.96, "lon": -82.46},
+        household={
             "adults": 2,
             "children_ages": [4, 9],
             "pets": [{"type": "cat", "count": 2}],
             "has_car": False,
             "evac_zone": "B",
         },
-    }
-    user = client.post(f"{API}/users", json=body).json()
+    )["user"]
     assert user["location"] == {"lat": 27.96, "lon": -82.46} and user["location_source"] == "gps"
     hh = user["household"]
     assert hh["children_ages"] == [4, 9] and hh["pets"] == [{"type": "cat", "count": 2}]
@@ -226,9 +224,9 @@ def test_sign_up_with_gps_and_household(client):
 
 
 def test_sign_up_rejects_unknown_zip_and_bad_fields(client, bank):
-    res = client.post(f"{API}/users", json={"name": "Sam", "zip": "33601"})
+    res = client.post(f"{API}/auth/signup", json={**SIGNUP, "zip": "33601"})
     assert res.status_code == 400 and res.json()["error"]["code"] == "zip_not_supported"
-    res = client.post(f"{API}/users", json={"name": "", "zip": "33602", "household": {"children_ages": [30]}})
+    res = client.post(f"{API}/auth/signup", json={**SIGNUP, "name": "", "household": {"children_ages": [30]}})
     assert res.status_code == 422
     locs = [f["loc"] for f in res.json()["error"]["fields"]]
     assert ["body", "name"] in locs and ["body", "household", "children_ages", 0] in locs
@@ -237,19 +235,12 @@ def test_sign_up_rejects_unknown_zip_and_bad_fields(client, bank):
 
 def test_sign_up_when_nessie_is_down(client, bank):
     bank.down = True
-    res = client.post(f"{API}/users", json={"name": "Sam", "zip": "33602"})
+    res = client.post(f"{API}/auth/signup", json=SIGNUP)
     assert res.status_code == 503 and res.json()["error"]["code"] == "bank_unavailable"
 
 
-def test_me_needs_a_known_user_id(client):
-    res = client.get(f"{API}/me")
-    assert res.status_code == 401 and res.json()["error"]["code"] == "auth_required"
-    res = client.get(f"{API}/me", headers={"X-User-Id": "usr_nope"})
-    assert res.status_code == 401 and res.json()["error"]["code"] == "user_not_found"
-
-
 def test_get_me(client, auth, maria):
-    assert client.get(f"{API}/me", headers=auth).json() == maria
+    assert {**client.get(f"{API}/me", headers=auth).json(), "auth": auth} == maria
 
 
 def test_patch_me_settings_merge(client, auth):
@@ -275,16 +266,6 @@ def test_patch_me_zip_and_location(client, auth):
     assert user["location"] == {"lat": 27.3, "lon": -82.5} and user["location_source"] == "gps"
     res = client.patch(f"{API}/me", headers=auth, json={"zip": "33601"})
     assert res.status_code == 400 and res.json()["error"]["code"] == "zip_not_supported"
-
-
-def test_patch_household_is_partial(client, auth):
-    res = client.patch(f"{API}/me/household", headers=auth, json={"seniors": 1, "mobility": "walker"})
-    assert res.status_code == 200
-    hh = res.json()["household"]
-    assert hh["seniors"] == 1 and hh["mobility"] == "walker"
-    assert hh["adults"] == 2 and hh["children_ages"] == [7] and hh["pets"] == [{"type": "dog", "count": 1}]
-    res = client.patch(f"{API}/me/household", headers=auth, json={"mobility": "skateboard"})
-    assert res.status_code == 422
 
 
 def test_accounts_read_live_nessie_balances(client, auth, bank, clock):
@@ -330,12 +311,11 @@ def test_maria_budget_matches_the_api_example():
 
 def test_maria_guide():
     g = guide(MARIA)
-    assert g.needs == ["everyone", "kids", "pets"]
+    assert needs(MARIA) == ["everyone", "kids", "pets"]
     assert g.rooms == 1
-    assert g.route.drives and g.route.rest_stop_every_hours == 2
     assert g.shelter_filter.pets and not g.shelter_filter.wheelchair
     assert {c.need for c in g.checklists} == {"everyone", "kids", "pets"}
-    assert g.evacuation_reasons == ["ZONE_A"]
+    assert evacuation_reasons(MARIA) == ["ZONE_A"]
     assert any(c.kind == "pets" for c in g.advice)
 
 
@@ -345,11 +325,12 @@ def test_rooms_scale_with_people():
 
 
 def test_older_couple_without_a_car():
-    g = guide(Household(adults=0, seniors=2, has_car=False, oxygen=True, mobility="walker"))
-    assert not g.route.drives
-    assert g.route.max_drive_hours_per_day == 6 and g.route.extra_leave_buffer_hours == 3
-    assert g.route.prefer_regional_destination
-    assert g.shelter_filter.ground_floor and g.shelter_filter.special_needs_shelter
+    h = Household(adults=0, seniors=2, has_car=False, oxygen=True, mobility="walker")
+    g = guide(h)
+    route = route_needs(h)
+    assert route.max_drive_hours_per_day == 6 and route.extra_leave_buffer_hours == 3
+    assert route.prefer_regional_destination
+    assert g.shelter_filter.special_needs_shelter
     kinds = {c.kind for c in g.advice}
     assert {"no_car", "special_needs_shelter", "early_refill"} <= kinds
     medical = next(c for c in g.checklists if c.need == "medical")
@@ -357,25 +338,25 @@ def test_older_couple_without_a_car():
 
 
 def test_dialysis_means_leave_early_and_plan_with_doctor():
-    g = guide(Household(adults=1, dialysis=True))
-    assert "POWER_OR_MEDICAL" in g.evacuation_reasons
+    h = Household(adults=1, dialysis=True)
+    g = guide(h)
+    assert "POWER_OR_MEDICAL" in evacuation_reasons(h)
     assert any(c.kind == "leave_early_medical" for c in g.advice)
     special = next(c for c in g.advice if c.kind == "special_needs_shelter")
     assert special.deadline_hours_before_landfall == 72
 
 
 def test_mobile_home_always_evacuates_and_goes_regional():
-    g = guide(Household(adults=1, home_type="mobile", evac_zone="none"))
-    assert g.evacuation_reasons == ["MOBILE_HOME"]
-    assert g.route.prefer_regional_destination
+    h = Household(adults=1, home_type="mobile", evac_zone="none")
+    assert evacuation_reasons(h) == ["MOBILE_HOME"]
+    assert route_needs(h).prefer_regional_destination
 
 
-def test_infant_adds_supplies_and_needs_a_fridge():
+def test_infant_adds_supplies():
     h = Household(adults=2, children_ages=(1,))
     supplies = budget_lines(h, days=2, nights=2, meals_rate_cents=6_800, meals_source="gsa")[-1]
     assert supplies.amount_cents == 3_000 + 1_000 * 3 * 2 + 1_500 * 2
-    assert guide(h).shelter_filter.fridge
-    assert "infants" in guide(h).needs
+    assert "infants" in needs(h)
 
 
 def test_every_checklist_cites_a_ready_gov_page():
@@ -390,3 +371,8 @@ def test_every_checklist_cites_a_ready_gov_page():
         )
     )
     assert all(c.source_url.startswith("https://www.ready.gov/") for c in g.checklists)
+
+
+def test_the_demo_account_signs_in_with_a_username(client):
+    assert client.post(f"{API}/auth/signup", json={**SIGNUP, "email": "demo", "password": "1111"}).status_code == 201
+    assert client.post(f"{API}/auth/login", json={"email": "Demo", "password": "1111"}).status_code == 200

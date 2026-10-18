@@ -1,7 +1,7 @@
 // Shapes returned by the Harbor backend (docs/API.md). Money is integer cents; times are ISO 8601 UTC.
 import type { FeatureCollection } from 'geojson';
 
-export type RiskLevel = 'clear' | 'monitor' | 'prepare' | 'act' | 'shelter' | 'recover';
+type RiskLevel = 'clear' | 'monitor' | 'prepare' | 'act' | 'shelter' | 'recover';
 export interface LatLon {
   lat: number;
   lon: number;
@@ -40,16 +40,6 @@ export interface ZipInfo {
   lon: number;
 }
 
-export interface Health {
-  ok: boolean;
-  mode: 'demo' | 'live';
-  nessie: string;
-  nhc: string;
-  ai: string;
-  chat: 'ok' | 'off';
-  clock: string;
-}
-
 export interface Account {
   id: string;
   type: 'checking' | 'savings' | 'brokerage_cash' | 'wallet';
@@ -64,7 +54,7 @@ export interface Portfolio {
   holdings: { symbol: string; name: string; shares: number; value_cents: number }[];
 }
 
-export interface Alert {
+interface Alert {
   type: string;
   headline: string;
   issued: string;
@@ -92,7 +82,7 @@ export interface StormStatus {
   };
 }
 
-export type MoveKind =
+type MoveKind =
   | 'transfer'
   | 'sell_etf'
   | 'withdraw_cash'
@@ -100,14 +90,7 @@ export type MoveKind =
   | 'log_purchase'
   | 'restore_transfer'
   | 'rebuy_etf';
-export type MoveStatus =
-  | 'proposed'
-  | 'scheduled'
-  | 'executing'
-  | 'pending_settlement'
-  | 'done'
-  | 'cancelled'
-  | 'failed';
+type MoveStatus = 'proposed' | 'scheduled' | 'executing' | 'pending_settlement' | 'done' | 'cancelled' | 'failed';
 export interface Move {
   id: string;
   kind: MoveKind;
@@ -121,7 +104,7 @@ export interface Move {
   error: { code: string; message: string } | null;
 }
 
-export type PlanStatus =
+type PlanStatus =
   | 'draft'
   | 'awaiting_approval'
   | 'approved'
@@ -315,7 +298,7 @@ export interface Advice {
   };
 }
 
-export type Level = 'likely' | 'possible' | 'unlikely';
+type Level = 'likely' | 'possible' | 'unlikely';
 export interface Weather {
   storm: null | {
     name: string;

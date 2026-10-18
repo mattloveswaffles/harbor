@@ -15,7 +15,7 @@ import httpx
 
 from harbor.evac.household import PlaceFilter
 from harbor.evac.route import maps_links
-from harbor.sources.sensors import miles_between
+from harbor.geo import miles_between
 
 DATA = Path(__file__).resolve().parents[2] / "data" / "evac"
 FEMA_URL = "https://gis.fema.gov/arcgis/rest/services/NSS/OpenShelters/FeatureServer/0/query"

@@ -5,14 +5,14 @@ from datetime import datetime, timedelta
 import httpx
 from fastapi import APIRouter, Request
 
-from harbor.clock import iso
+from harbor.clock import iso, parse_time
 from harbor.context import evacuation_for
 from harbor.deps import ClockDep, SessionDep, UserDep
 from harbor.errors import HarborError
+from harbor.geo import miles_between
 from harbor.models import Household
 from harbor.sources import weather
-from harbor.sources.forecast import parse_time
-from harbor.sources.sensors import miles_between
+from harbor.sources.forecast import Exposure
 from harbor.ticker import forecast_source
 
 router = APIRouter(tags=["weather"])
@@ -47,9 +47,9 @@ def get_weather(request: Request, session: SessionDep, user: UserDep, clock: Clo
     now = clock.now()
     app = request.app
     source = forecast_source(app)
-    exp = source.exposure(user.lat, user.lon, user.zip, now) if source else None
-    adv = exp.advisory if exp else None
-    alerts = {a["type"] for a in exp.alerts} if exp else set()
+    exp = source.exposure(user.lat, user.lon, user.zip, now) if source else Exposure(None)
+    adv = exp.advisory
+    alerts = {a["type"] for a in exp.alerts}
 
     storm, closest = None, None
     if adv is not None:
@@ -70,7 +70,7 @@ def get_weather(request: Request, session: SessionDep, user: UserDep, clock: Clo
     until = parse_time(closest["valid_time"]) + timedelta(hours=18) if closest else now + timedelta(hours=60)
     step = 6 if until - now <= timedelta(hours=60) else 12
     start = now.replace(minute=0, second=0, microsecond=0) - timedelta(hours=now.hour % step)
-    archive = source is not None and source.is_replay  # a replayed storm reads archived forecasts
+    archive = source is not None  # a replayed storm reads archived forecasts
     try:
         rows = weather.hourly(user.lat, user.lon, start, start + timedelta(hours=step * BUCKETS), archive=archive)
     except httpx.HTTPError as exc:
@@ -79,7 +79,7 @@ def get_weather(request: Request, session: SessionDep, user: UserDep, clock: Clo
 
     peak_wind = max((s["wind_mph"] for s in series), default=0)
     peak_gust = max((s["gust_mph"] for s in series), default=0)
-    zone = (session.get(Household, user.id) or Household(user_id=user.id)).evac_zone
+    zone = session.get(Household, user.id).evac_zone
     surge_alert = "Storm Surge Warning" in alerts or "Hurricane Warning" in alerts
     bundle = evacuation_for(app, session, user, now)
     return {
@@ -87,13 +87,13 @@ def get_weather(request: Request, session: SessionDep, user: UserDep, clock: Clo
         "storm": storm,
         "hazards": {
             "wind": {
-                "arrives_at": iso(exp.eta) if exp else None,
+                "arrives_at": iso(exp.eta),
                 "peak_wind_mph": peak_wind,
                 "peak_gust_mph": peak_gust,
             },
             "surge": {
                 "zone": zone,
-                "level": "evacuate" if zone in SURGE_ZONES and (surge_alert or (exp and exp.in_cone)) else "low",
+                "level": "evacuate" if zone in SURGE_ZONES and (surge_alert or exp.in_cone) else "low",
             },
             "rain": {"total_in": round(sum(s["rain_in"] for s in series), 1)},
             "tornado": {"level": "watch" if any("Tornado" in a for a in alerts) else "possible" if adv else "unlikely"},

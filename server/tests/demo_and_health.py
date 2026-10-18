@@ -76,30 +76,11 @@ def test_reset_restores_accounts_portfolio_plans_and_clock(client, maria, auth, 
         assert [e.type for e in events] == ["demo_reset"]
 
 
-def test_demo_clock_endpoint(client, clock, timer):
-    assert client.get(f"{API}/demo/clock").json() == {
-        "running": False,
-        "storm": None,
-        "now": "2024-10-06T03:00:00Z",
-        "speed": 1800,
-        "paused_reason": None,
-    }
-    clock.start("milton-2024", speed=3600)
-    timer.t += 6
-    assert client.get(f"{API}/demo/clock").json() == {
-        "running": True,
-        "storm": "milton-2024",
-        "now": "2024-10-06T09:00:00Z",
-        "speed": 3600,
-        "paused_reason": None,
-    }
-
-
 def test_demo_routes_are_off_in_live_mode(tmp_path, bank):
     app = create_app(make_settings(tmp_path, harbor_mode="live"), bank=bank)
     with TestClient(app) as c:
-        for method, path in (("post", "/demo/reset"), ("get", "/demo/clock")):
-            res = getattr(c, method)(f"{API}{path}")
+        for path in ("/demo/reset", "/demo/start"):
+            res = c.post(f"{API}{path}")
             assert res.status_code == 403 and res.json()["error"]["code"] == "demo_mode_only"
 
 
@@ -160,17 +141,10 @@ def test_demo_clock_advance_and_reset():
     assert clock.now() == REPLAY_START and clock.storm is None and clock.speed == 1800
 
 
-def test_frozen_clock():
-    clock = FrozenClock(REPLAY_START)
-    clock.tick(hours=6)
-    assert clock.now() == REPLAY_START + timedelta(hours=6)
-
-
 def test_server_time_header_follows_demo_clock(client, clock, timer):
     assert client.get("/health").headers["X-Server-Time"] == "2024-10-06T03:00:00Z"
     clock.advance(timedelta(hours=12))
     assert client.get("/health").headers["X-Server-Time"] == "2024-10-06T15:00:00Z"
-    assert client.get("/api/v1/demo/clock").json()["now"] == "2024-10-06T15:00:00Z"
 
 
 def live_client(tmp_path, bank, key="test-key"):
@@ -218,17 +192,15 @@ def test_unknown_route_uses_error_envelope(client):
     assert "message" in error
 
 
-def test_openapi_lists_the_h2_8_endpoints(app):
+def test_openapi_lists_the_core_endpoints(app):
     paths = app.openapi()["paths"]
     for path in (
         "/health",
         "/api/v1/zip/{zip}",
-        "/api/v1/users",
         "/api/v1/me",
-        "/api/v1/me/household",
         "/api/v1/me/accounts",
         "/api/v1/demo/reset",
-        "/api/v1/demo/clock",
+        "/api/v1/demo/start",
     ):
         assert path in paths, path
 
@@ -241,23 +213,3 @@ def test_the_app_clock_is_real_time_until_a_scenario_starts():
     assert clock.now().year == 2024
     clock.reset()
     assert clock.now() == real
-
-
-class FrozenClock:
-    """For tests: time only moves when the test says so."""
-
-    def __init__(self, at: datetime):
-        self._now = utc(at)
-
-    def now(self) -> datetime:
-        return self._now
-
-    def set(self, at: datetime) -> None:
-        self._now = utc(at)
-
-    def tick(self, **kwargs) -> datetime:
-        self._now += timedelta(**kwargs)
-        return self._now
-
-    def state(self) -> dict:
-        return {"running": False, "storm": None, "now": iso(self._now), "speed": 0, "paused_reason": None}

@@ -1,4 +1,4 @@
-// One card, three phases on a numbered track: the layout of My plan and Accounts.
+// One card, three phases on a numbered track: the layout of My plan.
 import type { ReactNode } from 'react';
 import { Icon, type IconName } from '../../components/Icon.tsx';
 

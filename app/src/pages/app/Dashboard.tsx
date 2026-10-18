@@ -1,9 +1,8 @@
 import { type FormEvent, lazy, Suspense, useCallback, useMemo, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation, useNavigate, useNavigation } from 'react-router';
+import { NavLink, Outlet, useLocation, useNavigate, useNavigation } from 'react-router';
 import { Icon, type IconName } from '../../components/Icon.tsx';
+import { Brand } from '../../components/SiteLayout.tsx';
 import { api } from '../../lib/api.ts';
-import { mark } from '../../lib/assets.ts';
-import type { Health } from '../../lib/types.ts';
 import { ASK_KEY } from './labels.ts';
 import { Tour, tourSeen } from './Tour.tsx';
 import { Loading } from './ui.tsx';
@@ -59,17 +58,14 @@ function QuickAsk() {
   );
 }
 
-export function Dashboard({ health, onSignedOut }: { health: Health; onSignedOut: () => void }) {
-  const { data, act, reload } = useHarbor(onSignedOut);
+export function Dashboard({ onSignedOut }: { onSignedOut: () => void }) {
+  const { data, act } = useHarbor(onSignedOut);
   const { pathname } = useLocation();
   const navigation = useNavigation();
   const [touring, setTouring] = useState(() => !tourSeen());
   const [settings, setSettings] = useState<SettingsTab | null>(null);
   const openSettings = useCallback((tab: SettingsTab = 'you') => setSettings(tab), []);
-  const context = useMemo(
-    () => (data ? { data, health, act, reload, openSettings } : null),
-    [data, health, act, reload, openSettings],
-  );
+  const context = useMemo(() => (data ? { data, act, openSettings } : null), [data, act, openSettings]);
 
   if (!context || !data) return <Loading page />;
 
@@ -84,10 +80,7 @@ export function Dashboard({ health, onSignedOut }: { health: Health; onSignedOut
     <DashboardContext value={context}>
       <div className="shell">
         <aside className="side">
-          <Link className="brand" to="/">
-            <img src={mark} alt="" />
-            harbor
-          </Link>
+          <Brand />
           <nav className="tabs" aria-label="Sections">
             {TABS.map(([path, label, icon]) => (
               <NavLink key={label} className="side-link" to={path ? `/app/${path}` : '/app'} end>

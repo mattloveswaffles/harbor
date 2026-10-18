@@ -8,7 +8,7 @@ from pathlib import Path
 
 from shapely.geometry import Point, shape
 
-from harbor.sources.sensors import miles_between
+from harbor.geo import miles_between
 
 DATA = Path(__file__).resolve().parents[2] / "data" / "evac"
 ROUTE_BUFFER_DEG = 0.03  # about 2 miles either side of the route

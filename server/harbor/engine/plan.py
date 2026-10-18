@@ -20,6 +20,7 @@ BUFFER_MIN_CENTS = 15_000  # Harbor estimate: emergency buffer floor
 BUFFER_FRACTION = 0.10  # ...or 10% of everything else, whichever is larger
 CASH_FRACTION = 0.25  # withdraw a quarter of the budget as cash, in $20 notes
 CASH_NOTE_CENTS = 2_000
+ETF_CAP_FRACTION = 0.25  # sell at most a quarter of the portfolio
 CANCEL_LEAD = timedelta(minutes=5)  # cancel up to 5 minutes before a move runs
 BILL_SHIELD_DAYS = 7  # deferred bills move to a week after the cash-needed date
 MIN_REBUY_CENTS = 100
@@ -43,7 +44,6 @@ HELP_RESOURCES = [
 class Balances:
     checking_cents: int
     savings_cents: int
-    brokerage_cash_cents: int = 0
 
 
 @dataclass(frozen=True)
@@ -67,8 +67,6 @@ class BillIn:
 class PlanSettings:
     max_etf_sell_cents: int = 300_000
     cancel_window: timedelta = timedelta(minutes=120)
-    etf_cap_fraction: float = 0.25
-    checking_reserved_cents: int = 0  # money in checking already promised elsewhere
 
 
 @dataclass(frozen=True)
@@ -198,11 +196,10 @@ def select_lots(
 # --- The waterfall
 def _waterfall(total: int, x: PlanInputs) -> tuple[int, int, int, int]:
     """(from_checking, from_savings, from_etf, shortfall) before timing is considered."""
-    checking = max(0, x.balances.checking_cents - x.settings.checking_reserved_cents)
-    from_checking = min(checking, total)
+    from_checking = min(max(0, x.balances.checking_cents), total)
     from_savings = min(x.balances.savings_cents, total - from_checking)
     need = total - from_checking - from_savings
-    cap = min(x.settings.max_etf_sell_cents, int(portfolio_value(x.lots, x.prices_cents) * x.settings.etf_cap_fraction))
+    cap = min(x.settings.max_etf_sell_cents, int(portfolio_value(x.lots, x.prices_cents) * ETF_CAP_FRACTION))
     from_etf = min(need, cap)
     return from_checking, from_savings, from_etf, need - from_etf
 
@@ -216,7 +213,7 @@ def _day(at: datetime) -> str:
     return f"{local:%a} {local.day} {local:%b}"  # strftime's %-d doesn't work on Windows
 
 
-def _money(cents: int) -> str:
+def money(cents: int) -> str:
     return f"${cents / 100:,.2f}".replace(".00", "")
 
 
@@ -341,7 +338,7 @@ def build_plan(x: PlanInputs) -> PlanDraft:
         terms = {s.long_term for m in sells for s in m.lot_sales}
         kind = "long-term" if terms == {True} else "short-term" if terms == {False} else "mixed short- and long-term"
         word = "gains" if gain_total >= 0 else "losses"
-        tax_note = f"Selling {', '.join(parts)} realises about {_money(abs(gain_total))} of {kind} {word}."
+        tax_note = f"Selling {', '.join(parts)} realises about {money(abs(gain_total))} of {kind} {word}."
 
     alternatives = _alternatives(x, lines, total, gain_total)
     sources = {
@@ -368,8 +365,7 @@ def build_plan(x: PlanInputs) -> PlanDraft:
 
 def _alternatives(x: PlanInputs, lines: list[BudgetLine], total: int, gain_total: int) -> list[Alternative]:
     out = []
-    checking = max(0, x.balances.checking_cents - x.settings.checking_reserved_cents)
-    cash_only = checking + x.balances.savings_cents
+    cash_only = max(0, x.balances.checking_cents) + x.balances.savings_cents
     out.append(
         Alternative(
             id="alt_no_etf",
@@ -377,7 +373,7 @@ def _alternatives(x: PlanInputs, lines: list[BudgetLine], total: int, gain_total
             feasible=cash_only >= total,
             why_not=None
             if cash_only >= total
-            else f"Checking and savings only cover {_money(cash_only)} of {_money(total)}.",
+            else f"Checking and savings only cover {money(cash_only)} of {money(total)}.",
             total_cents=total,
             etf_sale_cents=0,
             delta_tax_cents=-gain_total,
@@ -475,7 +471,6 @@ class RestoreDraft:
     unspent_cents: int
     moves: list[MoveDraft]
     warnings: list[str]
-    left_in_checking_cents: int
 
 
 def build_restore(r: RestoreInputs) -> RestoreDraft:
@@ -526,7 +521,6 @@ def build_restore(r: RestoreInputs) -> RestoreDraft:
             remaining -= cost
 
     to_savings += remaining
-    remaining = 0
     if to_savings:
         moves.insert(
             0,
@@ -542,4 +536,4 @@ def build_restore(r: RestoreInputs) -> RestoreDraft:
                 why="Moves the money you didn't spend back to savings.",
             ),
         )
-    return RestoreDraft(unspent, moves, warnings, r.checking_now_cents - unspent)
+    return RestoreDraft(unspent, moves, warnings)

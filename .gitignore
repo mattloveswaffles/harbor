@@ -9,8 +9,6 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
-.mypy_cache/
-*.egg-info/
 
 # Server data
 *.db
@@ -21,13 +19,9 @@ server/data/replays/.cache/
 # Web app (app/)
 node_modules/
 app/dist/
-*.tsbuildinfo
 
-# Logs and coverage
+# Logs
 *.log
-coverage/
-htmlcov/
-.coverage
 
 # Editors and OS
 .vscode/

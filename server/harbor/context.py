@@ -17,19 +17,17 @@ GUIDE_LEVELS = {"prepare", "act", "shelter", "recover"}
 
 def household_of(session: Session, user: models.User) -> Household:
     row = session.get(models.Household, user.id)
-    if row is None:
-        return Household()
-    med = row.medical or {}
+    med = row.medical
     return Household(
         adults=row.adults,
-        children_ages=tuple(row.children_ages or ()),
+        children_ages=tuple(row.children_ages),
         seniors=row.seniors,
-        pets=tuple(Pet(p.get("type", "pet"), p.get("count", 1)) for p in (row.pets or [])),
+        pets=tuple(Pet(p["type"], p["count"]) for p in row.pets),
         mobility=row.mobility,
-        power_dependent_device=bool(med.get("power_dependent_device")),
-        oxygen=bool(med.get("oxygen")),
-        dialysis=bool(med.get("dialysis")),
-        refrigerated_meds=bool(med.get("refrigerated_meds")),
+        power_dependent_device=med["power_dependent_device"],
+        oxygen=med["oxygen"],
+        dialysis=med["dialysis"],
+        refrigerated_meds=med["refrigerated_meds"],
         has_car=row.has_car,
         home_type=row.home_type,
         evac_zone=row.evac_zone,
@@ -51,7 +49,7 @@ def storm_inputs(app, user: models.User, now: datetime) -> dict:
         "track": lines[0] if lines else None,
         "category": max(cats) if cats else None,
         "eta": exp.eta,
-        "replay": source.is_replay,
+        "replay": True,
     }
 
 
@@ -60,10 +58,8 @@ def sensors_for(app) -> SensorSource | None:
     return sensor_source(source.root.name) if source else None
 
 
-def evacuation_for(app, session: Session, user: models.User, now: datetime) -> dict | None:
-    """The evacuation guide bundle (guide, budget_lines, layers), or None before `prepare`."""
-    if user.risk_level not in GUIDE_LEVELS:
-        return None
+def guide_for(app, session: Session, user: models.User, now: datetime) -> dict:
+    """The evacuation guide bundle (guide, budget_lines, layers, atms) for the user's home now."""
     storm = storm_inputs(app, user, now)
     return build_guide(
         now,
@@ -78,3 +74,8 @@ def evacuation_for(app, session: Session, user: models.User, now: datetime) -> d
         ors_key=app.state.settings.ors_api_key,
         choose=profile.choice(session, user),
     )
+
+
+def evacuation_for(app, session: Session, user: models.User, now: datetime) -> dict | None:
+    """The evacuation guide bundle, or None before `prepare`."""
+    return guide_for(app, session, user, now) if user.risk_level in GUIDE_LEVELS else None

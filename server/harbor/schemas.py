@@ -1,4 +1,4 @@
-"""API request and response models. These match docs/API.md field for field and feed docs/openapi.json."""
+"""API request and response models."""
 
 from typing import Annotated, Literal
 
@@ -45,20 +45,6 @@ class HouseholdModel(BaseModel):
         if self.adults + self.seniors < 1:
             raise ValueError("a household needs at least one adult or senior")
         return self
-
-
-class HouseholdPatch(BaseModel):
-    """Send only the fields that change."""
-
-    adults: int | None = Field(None, ge=0, le=20)
-    children_ages: list[ChildAge] | None = Field(None, max_length=20)
-    seniors: int | None = Field(None, ge=0, le=20)
-    pets: list[Pet] | None = Field(None, max_length=10)
-    mobility: Mobility | None = None
-    medical: Medical | None = None
-    has_car: bool | None = None
-    home_type: HomeType | None = None
-    evac_zone: EvacZone | None = None
 
 
 class UserSettings(BaseModel):
@@ -224,44 +210,15 @@ class MapOut(BaseModel):
     attribution: list[str]
 
 
-class DemoStormOut(BaseModel):
-    id: str = Field(examples=["milton-2024"])
-    name: str
-    year: int
-    landfall_at: str | None
-    description: str
-    demo_zips: list[str]
-    start: str = Field(description="Where /demo/start puts the clock")
-    end: str = Field(description="The replay has no storm after this time")
-    advisories: int
-
-
 class DemoStartIn(BaseModel):
     storm: str = Field("milton-2024", examples=["milton-2024"])
     speed: float | None = Field(None, gt=0, le=86400, description="Storm seconds per real second; default 1800")
 
 
-class DemoAdvanceIn(BaseModel):
-    """Send exactly one of `hours`, `to` or `to_risk`."""
-
-    hours: float | None = Field(None, gt=0, le=240)
-    to: Literal["next_advisory"] | None = None
-    to_risk: RiskLevel | None = None
-
-
-# --- Activity feed and the AI toggle
+# --- Activity feed
 class EventOut(BaseModel):
     id: str
     at: str
     type: str
     message: str
     data: dict
-
-
-class DemoAiIn(BaseModel):
-    enabled: bool
-
-
-class DemoAiOut(BaseModel):
-    enabled: bool = Field(description="The toggle as set")
-    ai: Literal["ok", "off"] = Field(description="`ok` only when the toggle is on and OPENROUTER_API_KEY is set")

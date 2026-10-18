@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 PEOPLE_PER_ROOM = 4  # 2 queen beds; confirm with each hotel
@@ -15,7 +15,6 @@ SUPPLIES_BASE_CENTS = 3_000  # Harbor estimate: kit top-up (batteries, chargers,
 SUPPLIES_PER_PERSON_DAY_CENTS = 1_000  # Harbor estimate: water and snacks on the road
 INFANT_SUPPLIES_PER_DAY_CENTS = 1_500  # Harbor estimate: formula, diapers, wipes
 MAX_DRIVE_HOURS_CAREFUL = 6  # Harbor estimate for older adults and medical needs
-REST_STOP_HOURS_WITH_KIDS = 2  # Harbor estimate
 EARLY_LEAVE_EXTRA_HOURS = 3  # on top of the normal 3 h buffer
 
 READY_KIT = "https://www.ready.gov/kit"
@@ -72,9 +71,7 @@ class BudgetLine:
 
 @dataclass(frozen=True)
 class RouteNeeds:
-    drives: bool
     max_drive_hours_per_day: int | None
-    rest_stop_every_hours: int | None
     extra_leave_buffer_hours: int
     prefer_regional_destination: bool  # tier B: outside the cone, not just the evacuation zone
 
@@ -83,8 +80,6 @@ class RouteNeeds:
 class PlaceFilter:
     pets: bool
     wheelchair: bool
-    ground_floor: bool
-    fridge: bool
     special_needs_shelter: bool
 
 
@@ -107,13 +102,10 @@ class AdviceCard:
 
 @dataclass
 class HouseholdGuide:
-    needs: list[str]
     rooms: int
-    route: RouteNeeds
     shelter_filter: PlaceFilter
-    checklists: list[Checklist] = field(default_factory=list)
-    advice: list[AdviceCard] = field(default_factory=list)
-    evacuation_reasons: list[str] = field(default_factory=list)
+    checklists: list[Checklist]
+    advice: list[AdviceCard]
 
 
 def rooms_needed(h: Household) -> int:
@@ -159,9 +151,7 @@ def route_needs(h: Household) -> RouteNeeds:
     careful = h.seniors > 0 or h.medical or h.mobility != "none"
     early = h.power_dependent_device or h.oxygen or h.dialysis or h.seniors > 0
     return RouteNeeds(
-        drives=h.has_car,
         max_drive_hours_per_day=MAX_DRIVE_HOURS_CAREFUL if careful else None,
-        rest_stop_every_hours=REST_STOP_HOURS_WITH_KIDS if h.children_ages else None,
         extra_leave_buffer_hours=EARLY_LEAVE_EXTRA_HOURS if early else 0,
         prefer_regional_destination=h.home_type == "mobile" or h.power_dependent_device or h.oxygen or h.dialysis,
     )
@@ -171,8 +161,6 @@ def place_filter(h: Household) -> PlaceFilter:
     return PlaceFilter(
         pets=bool(h.pets),
         wheelchair=h.mobility == "wheelchair",
-        ground_floor=h.mobility != "none" or h.seniors > 0,
-        fridge=h.refrigerated_meds or h.has_infant,
         special_needs_shelter=h.medical or h.mobility != "none",
     )
 
@@ -327,11 +315,8 @@ def advice_cards(h: Household) -> list[AdviceCard]:
 
 def guide(h: Household) -> HouseholdGuide:
     return HouseholdGuide(
-        needs=needs(h),
         rooms=rooms_needed(h),
-        route=route_needs(h),
         shelter_filter=place_filter(h),
         checklists=checklists(h),
         advice=advice_cards(h),
-        evacuation_reasons=evacuation_reasons(h),
     )

@@ -51,19 +51,19 @@ function Hazards({ w }: { w: Weather }) {
   const h = w.hazards;
   return (
     <div className="hazards">
-      <div className="hazard" style={{ ['--tint' as string]: '#edf3ef' }}>
+      <div className="hazard" style={{ '--tint': '#edf3ef' }}>
         <small>Wind</small>
         <strong>{h.wind.arrives_at ? when(h.wind.arrives_at) : `${h.wind.peak_gust_mph} mph`}</strong>
         <small>{h.wind.arrives_at ? `Storm winds arrive · gusts ${h.wind.peak_gust_mph} mph` : 'Peak gusts'}</small>
         <img className="dude in-hazard" src={dudes.gust} alt="" />
       </div>
-      <div className="hazard" style={{ ['--tint' as string]: '#e5eff1' }}>
+      <div className="hazard" style={{ '--tint': '#e5eff1' }}>
         <small>Surge</small>
         <strong>Zone {h.surge.zone === 'unsure' ? '?' : h.surge.zone}</strong>
         <small>{h.surge.level === 'evacuate' ? 'Floods first: leave' : 'Low risk at home'}</small>
         <img className="dude in-hazard" src={dudes.plip} alt="" />
       </div>
-      <div className="hazard" style={{ ['--tint' as string]: '#eef2ec' }}>
+      <div className="hazard" style={{ '--tint': '#eef2ec' }}>
         <small>Rain</small>
         <strong>{h.rain.total_in.toFixed(1)} in</strong>
         <small>Over the next {Math.round((w.series.length * w.step_hours) / 24)} days</small>

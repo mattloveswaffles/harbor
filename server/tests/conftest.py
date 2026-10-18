@@ -9,10 +9,14 @@ os.environ["HARBOR_MODE"] = "demo"
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlmodel import Session, select
 
 from harbor.clock import DemoClock
 from harbor.config import Settings
+from harbor.executor import catch_up
 from harbor.main import create_app
+from harbor.models import User
+from harbor.ticker import MAX_CATCH_UP, forecast_source, steps_between
 from tests.households import make_household
 from tests.nessie_double import NessieDouble
 
@@ -58,6 +62,26 @@ def fake_open_meteo(url: str, params: dict) -> dict:
     }
 
 
+def advance(client, *, hours: float | None = None, to_risk: str | None = None) -> None:
+    """Move the demo clock forward and catch up the way the scheduler does: by `hours`, or until someone
+    reaches `to_risk`."""
+    app, clock = client.app, client.app.state.clock
+    now = clock.now()
+    client.portal.call(catch_up, app, now)
+    steps = [now + timedelta(hours=hours)] if hours else steps_between(forecast_source(app), now, now + MAX_CATCH_UP)
+    for t in steps:
+        if to_risk and reached(app, to_risk):
+            return
+        clock.advance(t - clock.now())
+        client.portal.call(catch_up, app, t)
+    assert not to_risk or reached(app, to_risk), f"nobody reached {to_risk}"
+
+
+def reached(app, level: str) -> bool:
+    with Session(app.state.engine) as s:
+        return level in {u.risk_level for u in s.exec(select(User)).all()}
+
+
 @pytest.fixture(autouse=True)
 def offline(monkeypatch):
     """Tests never call Open-Meteo, OSRM or FEMA."""
@@ -100,4 +124,4 @@ def maria(client):
 
 @pytest.fixture
 def auth(maria):
-    return {"X-User-Id": maria["id"]}
+    return maria["auth"]

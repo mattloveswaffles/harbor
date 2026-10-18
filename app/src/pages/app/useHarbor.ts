@@ -2,12 +2,9 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ApiError, api } from '../../lib/api.ts';
 import type {
-  Account,
   Advice,
   Connection,
   Guide,
-  HarborEvent,
-  Health,
   MapOut,
   Plan,
   Portfolio,
@@ -22,12 +19,10 @@ export interface HarborData {
   user: User;
   place: ZipInfo | null;
   storm: StormStatus;
-  accounts: Account[];
   portfolio: Portfolio | null;
   plan: Plan | null;
   guide: Guide | null;
   map: MapOut;
-  events: HarborEvent[];
   advice: Advice | null;
   connections: Connection[];
 }
@@ -36,10 +31,8 @@ export type SettingsTab = 'you' | 'places' | 'household' | 'medical' | 'vehicle'
 
 export interface Dashboard {
   data: HarborData;
-  health: Health;
   /** Run an action, reload, and confirm with a toast (errors become a toast too). */
   act: (action: () => Promise<unknown>, done: string) => Promise<void>;
-  reload: () => Promise<void>;
   /** Open the Settings popup on a tab. */
   openSettings: (tab?: SettingsTab) => void;
 }
@@ -63,32 +56,19 @@ async function optional<T>(p: Promise<T>): Promise<T | null> {
 }
 
 async function loadAll(): Promise<HarborData> {
-  const [user, storm, accounts, portfolio, plan, guide, map, events, advice, connections] = await Promise.all([
+  const [user, storm, portfolio, plan, guide, map, advice, connections] = await Promise.all([
     api.me(),
     api.storm(),
-    optional(api.accounts()),
     optional(api.portfolio()),
     api.plan(),
     api.evacuation(),
     api.map(),
-    api.events(20),
     optional(api.advice()),
     optional(api.connections()),
+    optional(api.accounts()), // refreshes the Nessie balances the connections show
   ]);
   const place = await optional(api.zip(user.zip));
-  return {
-    user,
-    place,
-    storm,
-    accounts: accounts ?? [],
-    portfolio,
-    plan,
-    guide,
-    map,
-    events,
-    advice,
-    connections: connections ?? [],
-  };
+  return { user, place, storm, portfolio, plan, guide, map, advice, connections: connections ?? [] };
 }
 
 /** `onSignedOut` must be stable (useCallback): it's a dependency of the live connection. */
@@ -143,5 +123,5 @@ export function useHarbor(onSignedOut: () => void) {
     return () => clearInterval(timer);
   }, [running]);
 
-  return { data, act, reload };
+  return { data, act };
 }

@@ -11,7 +11,7 @@ import type {
   Connection,
   Guide,
   HarborEvent,
-  Health,
+  LatLon,
   MapOut,
   Plan,
   Portfolio,
@@ -50,19 +50,20 @@ async function failed(res: Response): Promise<ApiError> {
   return new ApiError(res.status, err?.code ?? `http_${res.status}`, err?.message ?? res.statusText);
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const headers = authHeaders(body);
-
-  let res: Response;
+async function send(url: string, init: RequestInit): Promise<Response> {
   try {
-    res = await fetch(path === '/health' ? API_ORIGIN + path : BASE + path, {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
+    return await fetch(url, init);
   } catch {
     throw new ApiError(0, 'network', 'Harbor is unreachable. Check your connection.');
   }
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const res = await send(path === '/health' ? API_ORIGIN + path : BASE + path, {
+    method,
+    headers: authHeaders(body),
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
   if (res.status === 204) return undefined as T;
   if (!res.ok) throw await failed(res);
   return (await res.json().catch(() => null)) as T;
@@ -74,26 +75,19 @@ const put = <T>(path: string, body: unknown) => request<T>('PUT', path, body);
 const del = <T>(path: string) => request<T>('DELETE', path);
 
 export const api = {
-  health: () => get<Health>('/health'),
+  health: () => get<unknown>('/health'),
   zip: (zip: string) => get<ZipInfo>(`/zip/${encodeURIComponent(zip)}`),
 
-  signup: (body: {
-    name: string;
-    email: string;
-    password: string;
-    zip: string;
-    location?: { lat: number; lon: number };
-  }) => post<AuthOut>('/auth/signup', body),
+  signup: (body: { name: string; email: string; password: string; zip: string; location?: LatLon }) =>
+    post<AuthOut>('/auth/signup', body),
   login: (email: string, password: string) => post<AuthOut>('/auth/login', { email, password }),
   logout: () => post<void>('/auth/logout'),
 
   me: () => get<User>('/me'),
-  updateZip: (zip: string) => request<User>('PATCH', '/me', { zip }),
   accounts: () => get<Account[]>('/me/accounts'),
   portfolio: () => get<Portfolio>('/me/portfolio'),
   storm: () => get<StormStatus>('/me/storm'),
   map: () => get<MapOut>('/me/map'),
-  events: (limit = 30) => get<HarborEvent[]>(`/me/events?limit=${limit}`),
   weather: () => get<Weather>('/me/weather'),
   atms: () => get<Atm[]>('/me/atms'),
 
@@ -109,16 +103,11 @@ export const api = {
   approve: (version: number) => post<unknown>('/me/plan/approve', { plan_version: version }),
   /** Ask Harbor: streams the answer as server-sent events (thinking, tools, text, then done or error). */
   async chat(messages: ChatTurn[], onEvent: (e: ChatEvent) => void): Promise<void> {
-    let res: Response;
-    try {
-      res = await fetch(`${BASE}/me/chat`, {
-        method: 'POST',
-        headers: authHeaders({}),
-        body: JSON.stringify({ messages }),
-      });
-    } catch {
-      throw new ApiError(0, 'network', 'Harbor is unreachable. Check your connection.');
-    }
+    const res = await send(`${BASE}/me/chat`, {
+      method: 'POST',
+      headers: authHeaders({}),
+      body: JSON.stringify({ messages }),
+    });
     if (!res.ok || !res.body) throw await failed(res);
     const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
     let buffer = '';
@@ -145,13 +134,7 @@ export const api = {
     const token = getToken();
     if (!token) return null;
     const source = new EventSource(`${BASE}/me/events/stream?token=${encodeURIComponent(token)}`);
-    source.onmessage = (msg) => {
-      try {
-        onEvent(JSON.parse(msg.data) as HarborEvent);
-      } catch {
-        /* ignore malformed frames */
-      }
-    };
+    source.onmessage = (msg) => onEvent(JSON.parse(msg.data) as HarborEvent);
     return source;
   },
 };

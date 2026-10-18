@@ -9,10 +9,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.engine import Engine
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from harbor.api import health_router, router
+from harbor.api import health, router
+from harbor.auth import LoginLimiter
 from harbor.bank import Bank, NessieConfigError, NessieError, NessieRejected, make_bank
 from harbor.clock import Clock, DemoClock, RealClock, iso
 from harbor.config import Settings, get_settings
@@ -32,14 +32,8 @@ class Site(StaticFiles):
         return found
 
 
-def create_app(
-    settings: Settings | None = None,
-    *,
-    clock: Clock | None = None,
-    bank: Bank | None = None,
-    engine: Engine | None = None,
-) -> FastAPI:
-    """Build the app. Tests pass their own settings, clock, bank and engine."""
+def create_app(settings: Settings | None = None, *, clock: Clock | None = None, bank: Bank | None = None) -> FastAPI:
+    """Build the app. Tests pass their own settings, clock and bank."""
     settings = settings or get_settings()
 
     @asynccontextmanager
@@ -49,7 +43,7 @@ def create_app(
             yield
         finally:
             if scheduler:
-                scheduler.shutdown()
+                scheduler.shutdown(wait=False)
             await app.state.bank.close()
 
     app = FastAPI(title="Harbor API", version="1.1.0", lifespan=lifespan)
@@ -60,11 +54,12 @@ def create_app(
         else RealClock()
     )
     app.state.bank = bank or make_bank(settings)
-    app.state.engine = engine or make_engine(settings.database_url)
+    app.state.engine = make_engine(settings.database_url)
     init_db(app.state.engine)
+    app.state.login_limiter = LoginLimiter()
+    app.state.nessie_check = None  # (checked at, status): see api/health.py
     app.state.tick_lock = threading.Lock()
     app.state.tick_cursor = None  # how far the scheduler has caught up (storm time)
-    app.state.ai_enabled = True  # POST /demo/ai toggle
     app.state.llm_model = None  # made on first use (harbor.ai.llm.model)
 
     app.add_middleware(
@@ -75,16 +70,12 @@ def create_app(
         expose_headers=["X-Server-Time"],
     )
     app.include_router(router)
-    app.include_router(health_router)
-
-    def server_time() -> str:
-        # The demo clock in demo mode, so countdowns follow the replay.
-        return iso(app.state.clock.now())
+    app.include_router(health.router)
 
     @app.middleware("http")
     async def add_server_time(request: Request, call_next):
         response = await call_next(request)
-        response.headers["X-Server-Time"] = server_time()
+        response.headers["X-Server-Time"] = iso(app.state.clock.now())  # the demo clock follows the replay
         return response
 
     @app.exception_handler(HarborError)
@@ -108,7 +99,7 @@ def create_app(
             body = error_body(exc.detail.get("code", f"http_{exc.status_code}"), exc.detail.get("message", ""))
         else:
             body = error_body(f"http_{exc.status_code}", str(exc.detail))
-        return JSONResponse(body, status_code=exc.status_code, headers=getattr(exc, "headers", None))
+        return JSONResponse(body, status_code=exc.status_code, headers=exc.headers)
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request: Request, exc: RequestValidationError):

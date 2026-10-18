@@ -1,5 +1,5 @@
-"""POST /auth/signup, /auth/login, /auth/logout and GET /auth/me. Send `Authorization: Bearer <token>`
-(`?token=` for the SSE stream).
+"""POST /auth/signup, /auth/login and /auth/logout. Send `Authorization: Bearer <token>` (`?token=` for the SSE
+stream).
 """
 
 from typing import Annotated
@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import select
 
 from harbor.api.users import new_user, user_out
-from harbor.auth import LoginLimiter, check_login, hash_password, issue_token, normalize_email, revoke_token
+from harbor.auth import check_login, hash_password, issue_token, normalize_email, revoke_token
 from harbor.clock import iso
 from harbor.deps import BankDep, ClockDep, SessionDep, UserDep
 from harbor.errors import HarborError
@@ -18,16 +18,22 @@ from harbor.schemas import CreateUser, UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-EMAIL = Field(min_length=3, max_length=254, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", examples=["maria@example.com"])
+# An email, or a short username like the demo account's "demo"
+LOGIN = Field(
+    min_length=3,
+    max_length=254,
+    pattern=r"^([^@\s]+@[^@\s]+\.[^@\s]+|[\w.-]{3,32})$",
+    examples=["maria@example.com", "demo"],
+)
 
 
 class SignupIn(CreateUser):
-    email: str = EMAIL
-    password: str = Field(min_length=8, max_length=128, description="At least 8 characters")
+    email: str = LOGIN
+    password: str = Field(min_length=4, max_length=128, description="At least 4 characters")
 
 
 class LoginIn(BaseModel):
-    email: str = EMAIL
+    email: str = LOGIN
     password: str = Field(min_length=1, max_length=128)
 
 
@@ -36,12 +42,6 @@ class AuthOut(BaseModel):
     token_type: str = "bearer"
     expires_at: str
     user: UserOut
-
-
-def limiter(request: Request) -> LoginLimiter:
-    if not hasattr(request.app.state, "login_limiter"):
-        request.app.state.login_limiter = LoginLimiter()
-    return request.app.state.login_limiter
 
 
 @router.post("/signup", response_model=AuthOut, status_code=201)
@@ -55,9 +55,7 @@ async def signup(body: SignupIn, session: SessionDep, bank: BankDep, clock: Cloc
             "An account with this email already exists. Log in instead.",
             {"email": "Already registered"},
         )
-    user = await new_user(
-        CreateUser(**body.model_dump(include={"name", "zip", "location", "household"})), session, bank, clock.now()
-    )
+    user = await new_user(body, session, bank, clock.now())
     session.add(
         Credential(user_id=user.id, email=email, password_hash=hash_password(body.password), created_at=clock.now())
     )
@@ -69,7 +67,7 @@ async def signup(body: SignupIn, session: SessionDep, bank: BankDep, clock: Cloc
 
 @router.post("/login", response_model=AuthOut)
 def login(body: LoginIn, request: Request, session: SessionDep) -> AuthOut:
-    lim = limiter(request)
+    lim = request.app.state.login_limiter
     if lim.locked(body.email):
         raise HarborError(429, "too_many_attempts", "Too many wrong passwords. Wait 15 minutes and try again.")
     user = check_login(session, body.email, body.password)
@@ -83,14 +81,8 @@ def login(body: LoginIn, request: Request, session: SessionDep) -> AuthOut:
 
 
 @router.post("/logout", status_code=204)
-def logout(session: SessionDep, user: UserDep, authorization: Annotated[str | None, Header()] = None) -> Response:
+def logout(session: SessionDep, user: UserDep, authorization: Annotated[str, Header()]) -> Response:
     """End this login: the token stops working at once."""
-    if authorization and authorization.lower().startswith("bearer "):
-        revoke_token(session, authorization[7:].strip())
-        session.commit()
+    revoke_token(session, authorization.partition(" ")[2].strip())
+    session.commit()
     return Response(status_code=204)
-
-
-@router.get("/me", response_model=UserOut)
-def me(session: SessionDep, user: UserDep) -> UserOut:
-    return user_out(session, user)

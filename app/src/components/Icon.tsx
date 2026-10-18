@@ -1,10 +1,8 @@
 // Hugeicons (MIT, see assets/hugeicons-LICENSE.md) as one inline sprite; <Icon name> references a symbol.
-import type { CSSProperties } from 'react';
 
 export type IconName =
   | 'location'
   | 'arrow'
-  | 'tick'
   | 'check'
   | 'car'
   | 'bus'
@@ -23,28 +21,19 @@ export type IconName =
   | 'home'
   | 'rain'
   | 'traffic'
-  | 'send'
-  | 'link'
   | 'group'
   | 'tornado'
-  | 'nav'
   | 'calendar'
   | 'plus'
   | 'close'
-  | 'phone'
-  | 'piggy'
   | 'wheelchair'
   | 'pin'
   | 'tent'
-  | 'water'
   | 'money'
-  | 'map'
   | 'zap'
   | 'heart'
   | 'plug'
   | 'logout'
-  | 'play'
-  | 'next'
   | 'refresh'
   | 'harbor'
   | 'settings'
@@ -52,14 +41,13 @@ export type IconName =
   | 'user'
   | 'external'
   | 'activity'
-  | 'forward'
   | 'search'
   | 'chevron'
   | 'thought';
 
-export function Icon({ name, className, style }: { name: IconName; className?: string; style?: CSSProperties }) {
+export function Icon({ name, className }: { name: IconName; className?: string }) {
   return (
-    <svg className={className ? `icon ${className}` : 'icon'} style={style} aria-hidden="true">
+    <svg className={className ? `icon ${className}` : 'icon'} aria-hidden="true">
       <use href={`#i-${name}`} />
     </svg>
   );
@@ -91,15 +79,6 @@ export function IconSprite() {
         />
         <path
           d="M13 18C13 18 19 13.5811 19 12C19 10.4188 13 6 13 6"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-      </symbol>
-      <symbol id="i-tick" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M5 14L8.5 17.5L19 6.5"
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -559,71 +538,6 @@ export function IconSprite() {
           strokeWidth="1.5"
         />
       </symbol>
-      <symbol id="i-send" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M2.01733 17.4993C4.2169 17.4993 6.00001 19.2824 6.00001 21.4819"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M18 21.4819V21.39C18 19.2412 19.742 17.4993 21.8908 17.4993"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M6.00001 7.5166C6.00001 9.71617 4.2169 11.4993 2.01733 11.4993"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M18 7.5166C18 9.69692 19.769 11.468 21.9423 11.4989"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M17 7.50098C19.175 7.51308 20.3529 7.60953 21.1213 8.37792C22 9.2566 22 10.6708 22 13.4992V15.4992C22 18.3277 22 19.7419 21.1213 20.6206C20.2426 21.4992 18.8284 21.4992 16 21.4992H8C5.17157 21.4992 3.75736 21.4992 2.87868 20.6206C2 19.7419 2 18.3277 2 15.4992V13.4992C2 10.6708 2 9.2566 2.87868 8.37792C3.64706 7.60953 4.82497 7.51308 7 7.50098"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M15 14.4993C15 16.1561 13.6569 17.4993 12 17.4993C10.3431 17.4993 9 16.1561 9 14.4993C9 12.8424 10.3431 11.4993 12 11.4993C13.6569 11.4993 15 12.8424 15 14.4993Z"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M9.5 5.00098C9.5 5.00098 11.2998 2.50098 12 2.50098C12.7002 2.50098 14.5 5.00098 14.5 5.00098M12 8.00098V3.00098"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-      </symbol>
-      <symbol id="i-link" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M9.14339 10.691L9.35031 10.4841C11.329 8.50532 14.5372 8.50532 16.5159 10.4841C18.4947 12.4628 18.4947 15.671 16.5159 17.6497L13.6497 20.5159C11.671 22.4947 8.46279 22.4947 6.48405 20.5159C4.50532 18.5372 4.50532 15.329 6.48405 13.3503L6.9484 12.886"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M17.0516 11.114L17.5159 10.6497C19.4947 8.67095 19.4947 5.46279 17.5159 3.48405C15.5372 1.50532 12.329 1.50532 10.3503 3.48405L7.48405 6.35031C5.50532 8.32904 5.50532 11.5372 7.48405 13.5159C9.46279 15.4947 12.671 15.4947 14.6497 13.5159L14.8566 13.309"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeWidth="1.5"
-        />
-      </symbol>
       <symbol id="i-group" viewBox="0 0 24 24" fill="none">
         <path
           d="M18.4995 20.5C18.2663 17.5685 15.8417 15.2477 12.808 15.0521L11.9995 15C11.7107 15.0076 11.4416 15.0178 11.1877 15.0298C8.18075 15.1723 5.7304 17.5974 5.49951 20.5"
@@ -687,13 +601,6 @@ export function IconSprite() {
           strokeWidth="1.5"
         />
       </symbol>
-      <symbol id="i-nav" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M11.922 4.79004C16.6963 3.16245 19.0834 2.34866 20.3674 3.63261C21.6513 4.91656 20.8375 7.30371 19.21 12.078L18.1016 15.3292C16.8517 18.9958 16.2267 20.8291 15.1964 20.9808C14.9195 21.0216 14.6328 20.9971 14.3587 20.9091C13.3395 20.5819 12.8007 18.6489 11.7231 14.783C11.4841 13.9255 11.3646 13.4967 11.0924 13.1692C11.0134 13.0742 10.9258 12.9866 10.8308 12.9076C10.5033 12.6354 10.0745 12.5159 9.21705 12.2769C5.35111 11.1993 3.41814 10.6605 3.0909 9.64127C3.00292 9.36724 2.97837 9.08053 3.01916 8.80355C3.17088 7.77332 5.00419 7.14834 8.6708 5.89838L11.922 4.79004Z"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        />
-      </symbol>
       <symbol id="i-calendar" viewBox="0 0 24 24" fill="none">
         <path d="M16 2V6M8 2V6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
         <path
@@ -731,45 +638,6 @@ export function IconSprite() {
       <symbol id="i-close" viewBox="0 0 24 24" fill="none">
         <path
           d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-      </symbol>
-      <symbol id="i-phone" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M13.5 2H10.5C8.14298 2 6.96447 2 6.23223 2.73223C5.5 3.46447 5.5 4.64298 5.5 7V17C5.5 19.357 5.5 20.5355 6.23223 21.2678C6.96447 22 8.14298 22 10.5 22H13.5C15.857 22 17.0355 22 17.7678 21.2678C18.5 20.5355 18.5 19.357 18.5 17V7C18.5 4.64298 18.5 3.46447 17.7678 2.73223C17.0355 2 15.857 2 13.5 2Z"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M12.125 19H12M12.25 19C12.25 19.1381 12.1381 19.25 12 19.25C11.8619 19.25 11.75 19.1381 11.75 19C11.75 18.8619 11.8619 18.75 12 18.75C12.1381 18.75 12.25 18.8619 12.25 19Z"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-      </symbol>
-      <symbol id="i-piggy" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M14.5 5.5H10.5C6.91015 5.5 4 8.41015 4 12C4 14.3012 5.19584 16.3231 7 17.4782L7.28751 19.2158C7.35758 19.6393 7.39262 19.851 7.4905 20.0143C7.6037 20.2031 7.77604 20.3492 7.98078 20.4301C8.1578 20.5 8.37243 20.5 8.80169 20.5C9.19947 20.5 9.39836 20.5 9.56635 20.4378C9.76071 20.3659 9.92792 20.2353 10.0449 20.0642C10.1459 19.9163 10.1942 19.7234 10.2906 19.3375L10.5 18.5H13.5L13.7094 19.3375C13.8058 19.7234 13.8541 19.9163 13.9551 20.0642C14.0721 20.2353 14.2393 20.3659 14.4337 20.4378C14.6016 20.5 14.8005 20.5 15.1983 20.5C15.6276 20.5 15.8422 20.5 16.0192 20.4301C16.224 20.3492 16.3963 20.2031 16.5095 20.0143C16.6074 19.851 16.6424 19.6393 16.7125 19.2158L17 17.4782C18.1096 16.7678 18.9891 15.7295 19.5018 14.5L20.3925 14.3217C21.162 14.1677 21.5468 14.0907 21.7734 13.8142C22 13.5378 22 13.1454 22 12.3606V12.0616C22 11.3116 22 10.9366 21.7882 10.6654C21.5764 10.3941 21.2126 10.3032 20.4851 10.1213L20 10C20 8.5 18.8333 7.16667 18 6.5V3.5H17.7361C16.3657 3.5 15.1129 4.27427 14.5 5.5Z"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M15.875 9.75H15.75M16 9.75C16 9.88807 15.8881 10 15.75 10C15.6119 10 15.5 9.88807 15.5 9.75C15.5 9.61193 15.6119 9.5 15.75 9.5C15.8881 9.5 16 9.61193 16 9.75Z"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M2 8V10C2 11.1046 2.89543 12 4 12"
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -856,20 +724,6 @@ export function IconSprite() {
         />
         <path d="M2 21H22" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
       </symbol>
-      <symbol id="i-water" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M17.4776 9.00915C17.485 9.00911 17.4925 9.00909 17.5 9.00909C19.9853 9.00909 22 11.0269 22 13.5159C22 15.8512 20.2265 17.7716 17.9548 18M17.4776 9.00915C17.4924 8.8442 17.5 8.67716 17.5 8.50834C17.5 5.46617 15.0376 3 12 3C9.12324 3 6.76233 5.21197 6.52042 8.03032M17.4776 9.00915C17.3753 10.1453 16.9286 11.182 16.2428 12.0136M6.52042 8.03032C3.98398 8.27205 2 10.4116 2 13.0152C2 15.4378 3.71776 17.536 6 18M6.52042 8.03032C6.67826 8.01527 6.83823 8.00758 7 8.00758C8.12582 8.00758 9.16474 8.38023 10.0005 9.00909"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M9.5 18.5034C9.5 17.2482 10.5532 16.0077 11.2924 15.2917C11.6939 14.9028 12.3061 14.9028 12.7076 15.2917C13.4468 16.0077 14.5 17.2482 14.5 18.5034C14.5 19.7341 13.5533 21 12 21C10.4467 21 9.5 19.7341 9.5 18.5034Z"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        />
-      </symbol>
       <symbol id="i-money" viewBox="0 0 24 24" fill="none">
         <path
           d="M14.4998 12.001C14.4998 13.3817 13.3805 14.501 11.9998 14.501C10.6191 14.501 9.49982 13.3817 9.49982 12.001C9.49982 10.6203 10.6191 9.50098 11.9998 9.50098C13.3805 9.50098 14.4998 10.6203 14.4998 12.001Z"
@@ -887,23 +741,6 @@ export function IconSprite() {
         />
         <path
           d="M2 9.00098C3.95133 9.00098 5.70483 7.40605 5.92901 5.75514M18.5005 5.50098C18.5005 7.54062 20.2655 9.46997 22 9.46997M22 15.001C20.1009 15.001 18.2601 16.3112 18.102 18.0993M6.00049 18.4971C6.00049 16.2879 4.20963 14.4971 2.00049 14.4971"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-      </symbol>
-      <symbol id="i-map" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M5.25345 4.19584L4.02558 4.90813C3.03739 5.48137 2.54329 5.768 2.27164 6.24483C2 6.72165 2 7.30233 2 8.46368V16.6283C2 18.1542 2 18.9172 2.34226 19.3418C2.57001 19.6244 2.88916 19.8143 3.242 19.8773C3.77226 19.9719 4.42148 19.5953 5.71987 18.8421C6.60156 18.3306 7.45011 17.7994 8.50487 17.9435C8.98466 18.009 9.44231 18.2366 10.3576 18.6917L14.1715 20.588C14.9964 20.9982 15.004 21 15.9214 21H18C19.8856 21 20.8284 21 21.4142 20.4013C22 19.8026 22 18.8389 22 16.9117V10.1715C22 8.24423 22 7.2806 21.4142 6.68188C20.8284 6.08316 19.8856 6.08316 18 6.08316H15.9214C15.004 6.08316 14.9964 6.08139 14.1715 5.6712L10.8399 4.01463C9.44884 3.32297 8.75332 2.97714 8.01238 3.00117C7.27143 3.02521 6.59877 3.41542 5.25345 4.19584Z"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path d="M8 3L8 17.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-        <path
-          d="M15 6.5L15 20.5"
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -964,23 +801,6 @@ export function IconSprite() {
           strokeLinejoin="round"
           strokeWidth="1.5"
         />
-      </symbol>
-      <symbol id="i-play" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M18.8906 12.846C18.5371 14.189 16.8667 15.138 13.5257 17.0361C10.296 18.8709 8.6812 19.7884 7.37983 19.4196C6.8418 19.2671 6.35159 18.9776 5.95624 18.5787C5 17.6139 5 15.7426 5 12C5 8.2574 5 6.3861 5.95624 5.42132C6.35159 5.02245 6.8418 4.73288 7.37983 4.58042C8.6812 4.21165 10.296 5.12907 13.5257 6.96393C16.8667 8.86197 18.5371 9.811 18.8906 11.154C19.0365 11.7084 19.0365 12.2916 18.8906 12.846Z"
-          stroke="currentColor"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-      </symbol>
-      <symbol id="i-next" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M15.9351 12.6258C15.6807 13.8374 14.327 14.7077 11.6198 16.4481C8.67528 18.3411 7.20303 19.2876 6.01052 18.9229C5.60662 18.7994 5.23463 18.5823 4.92227 18.2876C4 17.4178 4 15.6118 4 12C4 8.38816 4 6.58224 4.92227 5.71235C5.23463 5.41773 5.60662 5.20057 6.01052 5.07707C7.20304 4.71243 8.67528 5.6589 11.6198 7.55186C14.327 9.29233 15.6807 10.1626 15.9351 11.3742C16.0216 11.7865 16.0216 12.2135 15.9351 12.6258Z"
-          stroke="currentColor"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path d="M20 5V19" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
       </symbol>
       <symbol id="i-refresh" viewBox="0 0 24 24" fill="none">
         <path
@@ -1093,20 +913,6 @@ export function IconSprite() {
           d="M7 14L9.79289 11.2071C10.1834 10.8166 10.8166 10.8166 11.2071 11.2071L12.7929 12.7929C13.1834 13.1834 13.8166 13.1834 14.2071 12.7929L17 10"
           stroke="currentColor"
           strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-      </symbol>
-      <symbol id="i-forward" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M21.8371 12.9178C21.5547 13.6884 20.7014 14.3047 18.9948 15.5372C16.6677 17.218 15.5041 18.0583 14.5312 17.9969C13.7882 17.9499 13.0976 17.6007 12.6223 17.0315C12 16.2863 12 14.8575 12 12C12 9.14246 12 7.71369 12.6223 6.96846C13.0976 6.39933 13.7882 6.0501 14.5312 6.00315C15.5041 5.94167 16.6677 6.78203 18.9948 8.46275C20.7014 9.6953 21.5547 10.3116 21.8371 11.0822C22.0543 11.675 22.0543 12.325 21.8371 12.9178Z"
-          stroke="currentColor"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M11.8371 12.9178C11.5547 13.6884 10.7014 14.3047 8.99482 15.5372C6.66769 17.218 5.50413 18.0583 4.5312 17.9969C3.78818 17.9499 3.09758 17.6007 2.62232 17.0315C2 16.2863 2 14.8575 2 12C2 9.14246 2 7.71369 2.62232 6.96846C3.09758 6.39933 3.78818 6.0501 4.5312 6.00315C5.50413 5.94167 6.66769 6.78203 8.99482 8.46275C10.7014 9.6953 11.5547 10.3116 11.8371 11.0822C12.0543 11.675 12.0543 12.325 11.8371 12.9178Z"
-          stroke="currentColor"
           strokeLinejoin="round"
           strokeWidth="1.5"
         />

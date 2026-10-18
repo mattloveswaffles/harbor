@@ -1,4 +1,4 @@
-"""OpenStreetMap hotels priced by GSA per diem × band. Never claims a real price or a free room."""
+"""OpenStreetMap hotels priced by GSA per diem. Never claims a real price or a free room."""
 
 from __future__ import annotations
 
@@ -12,13 +12,11 @@ from harbor.evac.household import PlaceFilter
 from harbor.evac.route import maps_links
 
 DATA = Path(__file__).resolve().parents[2] / "data" / "evac"
-BANDS = {"economy": 0.75, "standard": 1.0, "comfort": 1.3}  # Harbor estimate, not sourced
 NOTE = "Estimated cost. Call to confirm availability."
 
 
 @dataclass
 class LodgingPlan:
-    band: str
     nights: int
     rooms: int
     nightly_estimate_cents: int
@@ -32,7 +30,7 @@ class LodgingPlan:
 
     def to_api(self) -> dict:
         return {
-            "band": self.band,
+            "band": "standard",
             "nights": self.nights,
             "rooms": self.rooms,
             "nightly_estimate_cents": self.nightly_estimate_cents,
@@ -48,22 +46,14 @@ def _snapshot() -> dict:
     return json.loads(path.read_text(encoding="utf-8"))["by_destination"] if path.exists() else {}
 
 
-def nightly_estimate(dest: Destination, band: str = "standard") -> tuple[int, str]:
-    cents = round(dest.lodging_cents * BANDS[band])
-    basis = dest.basis + ("" if band == "standard" else f", × {BANDS[band]} for {band} (Harbor estimate)")
-    return cents, basis
-
-
 def plan_lodging(
     dest: Destination,
     origin: tuple[float, float],
     nights: int,
     rooms: int,
     needs: PlaceFilter,
-    band: str = "standard",
     limit: int = 6,
 ) -> LodgingPlan:
-    cents, basis = nightly_estimate(dest, band)
     options = []
     for p in _snapshot().get(dest.id, []):
         if needs.pets and p["pets"] == "no":
@@ -94,4 +84,4 @@ def plan_lodging(
             o["phone"] is None,
         )
     )
-    return LodgingPlan(band, nights, rooms, cents, basis, options[:limit])
+    return LodgingPlan(nights, rooms, dest.lodging_cents, dest.basis, options[:limit])

@@ -7,12 +7,13 @@ from pathlib import Path
 import httpx
 
 from harbor.engine.plan import Balances, PlanInputs, build_plan
-from harbor.evac.destination import decide, load_destinations
+from harbor.evac.destination import DATA, decide, load_destinations
 from harbor.evac.guide import build_guide
 from harbor.evac.household import Household, Pet, place_filter
 from harbor.evac.lodging import plan_lodging
 from harbor.evac.route import demo_route, maps_links, osrm_route
 from harbor.evac.shelters import demo_shelters, rank
+from tests.conftest import advance
 from tests.households import make_household
 
 UTC = UTC
@@ -136,9 +137,10 @@ def test_guide_budget_feeds_the_plan_engine():
 
 def test_destinations_have_gsa_rates_and_say_when_unchecked():
     dests = {d.id: d for d in load_destinations()}
-    assert dests["atlanta_ga"].lodging_cents == 18_200 and dests["atlanta_ga"].rate_checked
-    assert dests["gainesville_fl"].lodging_cents == 11_000 and dests["gainesville_fl"].rate_checked
-    assert all(d.rate_checked or "assumed" in d.basis for d in dests.values())
+    assert dests["atlanta_ga"].lodging_cents == 18_200 and dests["gainesville_fl"].lodging_cents == 11_000
+    rows = {r["id"]: r for r in json.loads((DATA / "destinations.json").read_text(encoding="utf-8"))}
+    assert rows["atlanta_ga"]["rate_checked"] and rows["gainesville_fl"]["rate_checked"]
+    assert all(r.get("rate_checked") or "assumed" in r["basis"] for r in rows.values())
 
 
 def test_mobile_home_goes_regional_even_without_a_cone():
@@ -192,18 +194,15 @@ def test_unfiltered_lodging_lists_snapshot_places():
 API = "/api/v1"
 
 
-def test_sensors_endpoint_and_history(client, auth):
+def test_sensors_endpoint(client, auth):
     client.post(f"{API}/demo/start")
-    client.post(f"{API}/demo/advance", json={"to_risk": "shelter"})
+    advance(client, to_risk="shelter")
     res = client.get(f"{API}/me/sensors", headers=auth)
     sensors = res.json()
     ids = [s["id"] for s in sensors]
     assert ids[0] == "usgs_02301500"  # closest first: the Alafia gauge is 16 mi away
     tide = next(s for s in sensors if s["id"] == "coops_8726520")
     assert tide["status"] in ("normal", "watch", "warning") and tide["observed_at"] <= res.headers["X-Server-Time"]
-    hist = client.get(f"{API}/me/sensors/coops_8726520/history?hours=24&metrics=surge_ft", headers=auth).json()
-    assert hist and set(hist[0]["readings"]) <= {"surge_ft"}
-    assert client.get(f"{API}/me/sensors/nope/history", headers=auth).json()["error"]["code"] == "sensor_not_found"
 
 
 def test_no_guide_before_the_storm(client, auth):
@@ -212,7 +211,7 @@ def test_no_guide_before_the_storm(client, auth):
 
 def test_guide_for_maria_and_choosing_a_destination(client, auth):
     client.post(f"{API}/demo/start")
-    client.post(f"{API}/demo/advance", json={"to_risk": "act"})
+    advance(client, to_risk="act")
     guide = client.get(f"{API}/me/evacuation", headers=auth).json()
     assert guide["decision"]["action"] == "evacuate"
     assert guide["route"]["links"]["google"].startswith("https://www.google.com/maps/dir/")
@@ -225,7 +224,7 @@ def test_guide_for_maria_and_choosing_a_destination(client, auth):
 
 def test_destinations_inside_the_cone_are_refused(client, auth):
     client.post(f"{API}/demo/start")
-    client.post(f"{API}/demo/advance", json={"to_risk": "act"})
+    advance(client, to_risk="act")
     res = client.post(f"{API}/me/evacuation/destination", headers=auth, json={"destination_id": "orlando_fl"})
     assert res.status_code == 409 and res.json()["error"]["code"] == "destination_not_safe"
     assert (
@@ -246,9 +245,8 @@ def test_atms_outside_the_cone_and_on_the_route_come_first(client, auth):
 
 
 def test_ruth_gets_a_shelter_and_transport_not_a_drive(client):
-    h = {"X-User-Id": make_household(client, "ruth")["id"]}
-    client.post(f"{API}/demo/start")
-    client.post(f"{API}/demo/advance", json={"to_risk": "prepare"})
+    h = make_household(client, "ruth")["auth"]
+    client.post(f"{API}/demo/start")  # Sarasota is at act from the replay start
     guide = client.get(f"{API}/me/evacuation", headers=h).json()
     assert guide["decision"]["action"] == "use_public_shelter"
     assert {"MOBILE_HOME", "NO_CAR", "POWER_OR_MEDICAL"} <= set(guide["decision"]["reason_codes"])
