@@ -1,88 +1,115 @@
-# Harbor
+<p align="center">
+  <img src="assets/harbor-logo.png" alt="Harbor logo" width="120" />
+</p>
 
-Harbor reads hurricane forecasts and live sensor data for your ZIP code and moves your money before
-the storm arrives. It puts evacuation cash in checking, sells investments early enough to settle,
-plans a safe route and a place to stay that suits your household, and moves everything back once
-the storm has really passed.
+<h1 align="center">Harbor</h1>
+<p align="center"><strong>Evacuation cash, ready before landfall.</strong></p>
+<p align="center"><a href="https://mattloveswaffles.github.io/harbor/">Live site</a> · <a href="docs/Harbor.pptx">Pitch deck</a></p>
 
-One in four Americans say they couldn't afford to evacuate, and after landfall, banks and ATMs
-can go down. Harbor uses the days of warning a forecast gives you so money is never the reason
-someone stays in harm's way.
+## Our goal
 
-**Rules decide, you approve, AI explains, real sensors keep you safe.**
+Help households afford to leave before a hurricane hits. Harbor watches the forecast for your home, plans your route, and lines up the money for the trip so you can approve it in one tap.
 
-![Harbor architecture](docs/diagrams/1-architecture.svg)
+## See it
 
-## How it works
+**1. Start with your address.** Harbor watches the forecast for your home.
 
-1. **Watch.** Harbor follows the National Hurricane Center's forecast for your home (cone, track,
-   wind probabilities, arrival times, NWS alerts) and nearby tide gauges, river gauges and buoys.
-2. **Plan.** When the risk rises, a rules engine builds an evacuation budget (lodging, fuel, food,
-   pets, supplies) and works out where the money comes from: checking first, then savings, then
-   only the ETF shares needed, timed so the sale settles (T+1) before you need it.
-3. **Approve.** An AI review explains the plan as a suggestion. Nothing moves until you approve,
-   and every ETF sale needs its own tap.
-4. **Act.** Money moves through the Capital One Nessie API: savings to checking, a cash withdrawal
-   before ATMs go down, and a bill due during the storm moved to after it. The evacuation guide
-   gives a route outside the forecast cone, shelters and hotels that fit your household, and when
-   to leave.
-5. **Recover.** Money moves freeze during landfall. Recovery waits until the sensors say it's safe
-   (rivers falling, surge gone), not just until the forecast alerts end. Then unspent money goes
-   back to savings and, if you opted in, sold ETFs are bought back.
+<img src="assets/screenshots/1-home.webp" alt="Harbor homepage: enter your home address to get a plan" width="100%">
 
-## Hackathon tracks
+**2. Know when to leave.** My plan shows when to go, where to stay and what to do first, written by Harbor's AI from your real data.
 
-| Track | How Harbor uses it |
+<img src="assets/screenshots/2-plan.webp" alt="My plan: leave by Tuesday 8:07 AM for Macon, with steps to get ready, leave and arrive" width="100%">
+
+**3. Fund the trip.** Harbor lines up the money from your accounts through Nessie. You approve it in one tap.
+
+<img src="assets/screenshots/3-accounts.webp" alt="Accounts: a $1,363 evacuation fund from checking, savings and investments, with the budget and the money moves to approve" width="100%">
+
+**4. Take the safest route.** Destinations outside the forecast cone, with fuel, cash and a room on the way.
+
+<img src="assets/screenshots/4-route.webp" alt="Route: I-75 north to Macon outside the forecast cone, with stops on the way" width="100%">
+
+**5. Ask anything.** Ask Harbor answers from your own plan, accounts and storm.
+
+<img src="assets/screenshots/5-ask.webp" alt="Ask Harbor: when to leave and whether the money covers the trip" width="100%">
+
+## Why it matters
+
+**Money can be hard to access. Time to prepare is short.**
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/motivation-dark.svg">
+    <img src="assets/motivation-light.svg" alt="Emergency finances: 37% would not pay entirely with cash or equivalent; an included 13% could not pay by any means. Hurricane watches and warnings precede anticipated tropical-storm-force winds by 48 and 36 hours." width="100%">
+  </picture>
+</p>
+<p align="center"><sub>Federal Reserve, 2024 SHED; NOAA/NHC. The 13% is included in the 37%. Cash equivalent includes a card paid off next statement. Alert timing refers to wind onset, not landfall.</sub></p>
+
+## From your accounts to a way out
+
+**Match available money to the cost and timing of leaving.** Bring checking, savings, and eligible investments into a proposed funding plan for transport, essentials, and shelter.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/funding-map-dark.svg">
+    <img src="assets/funding-map-light.svg" alt="Checking, savings, and conditional brokerage proceeds feed a departure funding plan. After household approval, funds cover transport, essentials, and a safe destination." width="100%">
+  </picture>
+</p>
+
+## No money? Still a way out.
+
+**Find the best available free route for your household.** Harbor would compare evacuation transport, pickup points, and shelter availability against your location, timing, and accessibility needs.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/no-funds-dark.svg">
+    <img src="assets/no-funds-light.svg" alt="No evacuation funds: identify household needs, find free transport and shelters, compare available routes, and suggest a pickup point and shelter destination." width="100%">
+  </picture>
+</p>
+
+Proposed routing support, subject to live availability and official evacuation guidance.
+
+## The potential
+
+**A bank-funded model with household readiness at its core.** The deck estimates a 60 million-person coastal market at $1 per customer per month, paid by banks.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/market-impact-dark.svg">
+    <img src="assets/market-impact-light.svg" alt="Deck market estimates: $720M TAM, $41M SAM, $12M SOM annually. Illustrative scenario: $1,200 prepared for each of 1,000, 10,000, or 100,000 households totals $1.2M, $12M, or $120M." width="100%">
+  </picture>
+</p>
+<p align="center"><sub>Market figures are Harbor estimates, not validated demand. Impact is an illustrative $1,200-per-household scenario, not money provided by Harbor, savings generated, or proven outcomes.</sub></p>
+
+## What's in the repo
+
+| | |
 |---|---|
-| STR "Sensors for Good" | Real NOAA tide gauges, USGS river gauges and NDBC buoys guard people's safety. Harbor freezes money moves when winds arrive, warns about dangerous water levels, and won't call the all-clear while rivers are still in flood, even after the forecast alerts end. The evacuation guide covers the route, pet-friendly and special-needs shelters, and checklists for kids, older adults and medical needs. |
-| Capital One "Best Use of Nessie" | Nessie is the bank: transfers from savings to checking, a cash withdrawal before landfall, the deposit when an ETF sale settles, a "bill shield" that moves a bill due during the storm, and the restore afterwards. Every write is tagged and reconciled so money is never sent twice. |
-| T. Rowe Price "NextGen Finance" | Harbor sells only the T. Rowe Price ETF shares needed, early enough to settle (T+1), choosing tax lots to keep gains low and warning about wash sales. The AI review explains each move as a suggestion and never decides; a validator stops it from quoting any number that isn't in the plan, and you approve every sale. |
+| `app/` | The website and app: React, React Router, TypeScript, built with Bun. Address search covers the whole US. |
+| `server/` | The API: Python, FastAPI and SQLite, managed with uv. Replays Hurricane Milton from real NOAA data, plans the money with a rules engine, connects banks and wallets and moves money through Capital One's Nessie sandbox, and runs its AI agents (Ask Harbor, and the evacuation plan as forced JSON) on OpenRouter through Pydantic AI. |
+| `docs/` | The pitch deck. |
 
-## Demo
+The server serves the built app next to the API, so one process runs everything.
 
-The demo replays **Hurricane Milton (October 2024)** with the real NHC advisories, NWS alerts,
-tide and river gauge readings and ETF prices, on a fast clock. Two fictional personas:
+## Run it
 
-- **Maria** (Tampa, 33602): two adults, a child and a dog, with a car.
-- **Ruth** (Sarasota, 34236): two seniors in a mobile home, no car, one on home oxygen.
+Needs [uv](https://docs.astral.sh/uv/) and [Bun](https://bun.sh), or just Docker.
 
-## Quick start (backend)
-
-```powershell
-cd backend
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
-Copy-Item .env.example .env      # set NESSIE_MODE=fake to run without a Nessie key
-uvicorn harbor.main:app --reload --workers 1
+```sh
+make install          # server and app dependencies
+cp .env.example .env  # NESSIE_API_KEY for the bank, OPENROUTER_API_KEY for the AI
+make dev              # http://localhost:8000, rebuilding the app on save
 ```
 
-Open http://localhost:8000/docs for the interactive API. Run the tests with `pytest`.
-Details, including deployment, are in [backend/README.md](backend/README.md).
+Or everything in one container: `make docker`, then open http://localhost:3000. Harbor runs normally, on real time. To see it plan for a storm, run `./seed.sh`: it signs up a demo household, connects its bank through Nessie, starts the Hurricane Milton scenario and opens the app signed in.
 
-## Project layout
+## Check it
 
-```
-backend/
-  harbor/            FastAPI app
-    engine/          risk levels, trading calendar, plan builder (pure rules)
-    evac/            destinations, routes, shelters, lodging, ATMs, household needs
-    sources/         forecast replay, sensors, ETF prices
-    bank/            Nessie client and an offline stand-in
-    ai/              plan review and explanations, with number guardrails
-    api/             HTTP endpoints
-  data/              recorded Milton replay, sensors, prices and evacuation data
-  tools/             scripts that build that data, plus checks
-  tests/             pytest suite
-docs/
-  DESIGN.md          system design, data sources and decisions
-  API.md             API contract for the frontend (+ openapi.json)
-  ROADMAP.md         build plan and demo script
-  diagrams/          architecture, risk levels, Milton timeline
+```sh
+make check            # ruff + pytest for the server, Biome + tsc + bun test for the app
 ```
 
-## Stack
+CI runs the same two checks on every push. When both pass on `main`, the site deploys to GitHub Pages. The `OPENROUTER_API_KEY` repository secret only reaches the server tests, never the published site.
 
-Python 3.11+, FastAPI, SQLModel/SQLite, APScheduler, Shapely, httpx and the Anthropic SDK on the
-backend; Next.js on the frontend. Data: NOAA NHC, NWS, NOAA CO-OPS, NOAA NDBC, USGS, OpenStreetMap,
-GSA per diem, Capital One Nessie.
+## Credits
+
+Storm data: NOAA National Hurricane Center (replayed from the public archive). Weather: Open-Meteo (CC BY 4.0). Routes: OSRM. Shelters: FEMA Open Shelters (Hillsborough County's Milton shelters in the replay). Maps: OpenFreeMap, Esri and © OpenStreetMap contributors. Banking: Capital One's Nessie sandbox. Icons: Hugeicons (MIT). Households in the demo are fictional.

@@ -1,0 +1,423 @@
+/* Harbor web app: every rule is scoped to .harbor-app (AppRoot) so it never leaks into the site */
+.harbor-app{min-height:100vh;background:var(--paper)}
+/* biome-ignore lint/complexity/noImportantStyles: [hidden] must win over component display rules */
+.harbor-app [hidden]{display:none!important}
+.harbor-app .spin{width:18px;height:18px;border-radius:50%;border:2px solid #dfe3dd;border-top-color:var(--ink);animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.harbor-app .busy{opacity:.6;pointer-events:none}
+.harbor-app .button[disabled]{opacity:.55;pointer-events:none}
+.harbor-app .button.wide{width:100%}
+
+/* Boot */
+.harbor-app .boot{min-height:100vh;display:grid;place-items:center;align-content:center;gap:18px}
+.harbor-app .boot img{width:40px;height:40px}
+.harbor-app .boot.in-tab{min-height:calc(100vh - 140px)}
+
+/* Onboarding */
+.harbor-app .onboard{position:relative;isolation:isolate;min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;padding:24px}
+.harbor-app .onboard-card{width:100%;max-width:540px;padding:40px 36px 34px;border-radius:28px;background:linear-gradient(140deg,#ffffff94,#ffffff4d);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border:1px solid #ffffffb3;box-shadow:0 30px 80px #0b1f2a40,inset 0 1px 0 #ffffffd9;text-align:center}
+.harbor-app .onboard-card .brand{justify-content:center;margin-bottom:26px}
+.harbor-app .onboard-card h1{font-size:32px;letter-spacing:-1.2px;line-height:1.15}
+.harbor-app .onboard-card .search{margin:24px auto 0;background:#ffffffb3;border-color:#ffffffcc}
+.harbor-app .hint{margin-top:14px;font-size:13px;color:var(--muted)}
+.harbor-app .hint.error{color:#b23b3b}
+.harbor-app .place{display:inline-flex;align-items:center;gap:8px;max-width:100%;margin:16px auto 4px;padding:7px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:13px;font-weight:500}
+.harbor-app .place span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.harbor-app .place .icon{width:16px;height:16px;color:var(--accent)}
+.harbor-app .place small{color:var(--muted);font-size:12px;font-weight:400;text-decoration:underline;text-underline-offset:3px}
+.harbor-app .fields{display:grid;gap:12px;margin:18px 0 16px;text-align:left}
+.harbor-app .fields label{display:grid;gap:6px;font-size:13px;font-weight:500}
+.harbor-app .fields input{height:46px;padding:0 14px;border-radius:12px;border:1px solid #ffffffb3;background:#ffffff99;font-size:15px;font-weight:400;outline:0}
+.harbor-app .fields input:focus{border-color:#ffffff;background:#ffffffd9;box-shadow:0 0 0 4px #ffffff59}
+.harbor-app .link{color:var(--ink);font-weight:500;font-size:13px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:#c9cfc6}
+
+/* Shell */
+.harbor-app .shell{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+.harbor-app .side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:22px 14px;background:#f1f3ef;border-right:1px solid var(--line)}
+.harbor-app .side .brand{margin:2px 10px 26px;font-size:23px}
+.harbor-app .side .brand img{width:24px;height:24px}
+.harbor-app .tabs{display:grid;gap:2px}
+.harbor-app .side-link{position:relative;display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;font-size:14.5px;color:var(--ink2)}
+.harbor-app .side-link .icon{width:18px;height:18px}
+.harbor-app .side-link:hover{background:#e7eae3}
+.harbor-app .side-link[aria-current=page]{background:#fff;color:var(--ink);font-weight:500;box-shadow:0 1px 2px #0000000f}
+.harbor-app .dot-badge{width:7px;height:7px;margin-left:auto;border-radius:50%;background:var(--accent)}
+.harbor-app .side-user{display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:12px;border-top:1px solid var(--line)}
+.harbor-app .me{display:flex;flex:1;min-width:0;align-items:center;gap:10px;padding:6px;border-radius:10px;text-align:left;font-size:13.5px}
+.harbor-app .me:hover{background:#e7eae3}
+.harbor-app .me .who{min-width:0;font-weight:500}
+.harbor-app .me small{display:block;overflow:hidden;font-size:12px;font-weight:400;color:var(--muted);text-overflow:ellipsis;white-space:nowrap}
+.harbor-app .av-blob{display:block;flex:none;transform:scale(1.15)}
+.harbor-app .icon-btn{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:8px;color:var(--muted)}
+.harbor-app .icon-btn:hover{background:#e7eae3;color:var(--ink)}
+.harbor-app .icon-btn .icon{width:17px;height:17px}
+.harbor-app .icon-btn.round{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink)}
+
+.harbor-app .main{min-width:0;max-width:1260px;padding:24px 36px 48px}
+.harbor-app .topbar{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.harbor-app .topbar h1{font-size:30px;letter-spacing:-1px;line-height:1.2}
+.harbor-app .topbar .spacer{flex:1}
+.harbor-app .quick-ask{display:flex;align-items:center;gap:10px;width:min(340px,40vw);height:42px;padding:0 14px;border-radius:999px;background:#fff;border:1px solid var(--line)}
+.harbor-app .quick-ask .icon{width:18px;height:18px;color:var(--muted)}
+.harbor-app .quick-ask input{flex:1;min-width:0;border:0;outline:0;background:none;font:inherit;font-size:14px}
+
+/* Building blocks */
+.harbor-app .tab{display:grid;gap:18px;animation:fade .25s var(--ease)}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}}
+.harbor-app .card{min-width:0;padding:22px;border-radius:18px;background:#fff;border:1px solid #e6e9e4}
+.harbor-app .card h2{display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:19px;letter-spacing:-.4px}
+.harbor-app button.link{display:inline-flex;align-items:center;gap:6px;margin-left:auto;font:500 13px Inter,sans-serif;color:var(--muted);text-decoration:none}
+.harbor-app .muted{color:var(--soft)}
+.harbor-app .grow{flex:1;min-width:0}
+.harbor-app .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.harbor-app .cols.map-left{grid-template-columns:1.55fr 1fr;align-items:stretch}
+.harbor-app .cols.wide-left{grid-template-columns:1.1fr 1fr;align-items:stretch}
+.harbor-app .fund{position:relative;display:flex;flex-direction:column;gap:0}
+.harbor-app .fund-big{display:flex;align-items:baseline;gap:10px}
+.harbor-app .fund-big strong{font-size:38px}
+.harbor-app .fund-big span{color:var(--muted)}
+.harbor-app .stack{display:flex;gap:3px;height:12px;margin:22px 0 10px;overflow:hidden;border-radius:6px}
+.harbor-app .stack i{display:block}
+.harbor-app .c1{background:var(--ink)}
+.harbor-app .c2{background:#5f8f7a}
+.harbor-app .c3{background:var(--accent)}
+.harbor-app .c4{background:repeating-linear-gradient(45deg,#d64545,#d64545 3px,#f2c4c4 3px,#f2c4c4 6px)}
+.harbor-app .fund .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-bottom:22px;font-size:13px;color:var(--muted)}
+.harbor-app .fund .legend span{display:inline-flex;align-items:center;gap:7px}
+.harbor-app .fund .legend i{display:block;width:9px;height:9px;border-radius:3px}
+.harbor-app .help{margin:12px 0 0;padding:10px 12px;border-radius:10px;background:#fbeceb;font-size:13px}
+.harbor-app .help a{text-decoration:underline}
+.harbor-app .card-note{position:relative;display:flex;align-items:center;min-height:124px;margin-top:auto;margin-bottom:0;overflow:hidden;padding:14px 150px 14px 16px;border-radius:14px;background:var(--green-soft);color:#155d3e;font-size:13.5px}
+.harbor-app .in-note{right:22px;bottom:-18px;height:124px}
+.harbor-app .budget{display:grid;gap:14px}
+.harbor-app .bline{display:grid;grid-template-columns:minmax(0,1.3fr) 1fr 70px;align-items:center;gap:14px;font-size:13.5px}
+.harbor-app .bline i{display:block;height:8px;border-radius:8px;background:linear-gradient(90deg,var(--ink) var(--w),#eef0ec var(--w))}
+.harbor-app .bline strong{text-align:right;font-weight:600}
+.harbor-app .move[data-status=cancelled]{opacity:.5}
+.harbor-app .move[data-status=done] .tag{background:var(--green-soft);color:var(--green)}
+.harbor-app .move[data-status=failed] .tag{background:#fbe7e7;color:#b23b3b}
+.harbor-app .card>.btn{margin-top:16px}
+.harbor-app .stack-col{display:grid;gap:18px;align-content:start}
+.harbor-app .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:44px;padding:0 20px;border-radius:999px;background:var(--ink);color:#fff;font-size:14px;font-weight:600;white-space:nowrap}
+.harbor-app .btn .icon{width:17px;height:17px}
+.harbor-app .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.harbor-app .btn.small{height:34px;padding:0 14px;font-size:13px}
+.harbor-app .btn[disabled]{opacity:.5;pointer-events:none}
+.harbor-app .btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.harbor-app .tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;background:var(--panel);font:500 12px Inter,sans-serif;letter-spacing:0;color:var(--muted);white-space:nowrap}
+.harbor-app .tag.on,.harbor-app .tag.ok{background:var(--green-soft);color:var(--green)}
+.harbor-app .tag.warn{background:var(--accent-soft);color:#c4521f}
+.harbor-app .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:13px;font-weight:500;color:var(--ink)}
+.harbor-app .chip[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.harbor-app .ri{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:12px;background:var(--panel);color:var(--ink2)}
+.harbor-app .ri .icon{width:18px;height:18px}
+.harbor-app .logo{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:12px;background:#fff;border:1px solid #eceee9}
+.harbor-app .logo img{width:24px;height:24px}
+.harbor-app .quiet{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
+.harbor-app .quiet .icon{color:var(--soft)}
+.harbor-app .ic{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:10px;background:var(--paper);border:1px solid #eceee9}
+.harbor-app .ic .icon{width:17px;height:17px}
+.harbor-app .row{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid #eef0ec;font-size:14px}
+.harbor-app .row:first-of-type{border-top:0}
+.harbor-app .row b{font-weight:500}
+.harbor-app .row small{display:block;font-size:12.5px;color:var(--muted)}
+.harbor-app .row strong{font-weight:600;white-space:nowrap}
+.harbor-app .add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:12px;padding:12px;border-radius:12px;border:1px dashed #cfd5cb;font-weight:500;color:var(--ink2)}
+.harbor-app .add .icon{width:16px;height:16px}
+
+/* Characters stand inside their card, cropped by its bottom edge, behind the text */
+.harbor-app .dude{position:absolute;z-index:0;pointer-events:none;user-select:none}
+.harbor-app :is(.hazard,.banner,.card-note,.phase,.empty)>:not(.dude){position:relative;z-index:1}
+
+/* My plan */
+.harbor-app .banner{position:relative;display:flex;align-items:center;gap:16px;min-height:112px;overflow:hidden;padding:22px 24px 22px 184px;border-radius:20px;background:#fff;border:1px solid #e6e9e4}
+.harbor-app .banner[data-tone=watch]{background:var(--accent-soft);border-color:#f8d3c2}
+.harbor-app .banner[data-tone=alert]{background:#fbeceb;border-color:#f2cfcd}
+.harbor-app .banner strong{display:block;font-family:var(--display);font-size:28px;font-weight:500;letter-spacing:-.8px;line-height:1.2}
+.harbor-app .banner small{display:block;font-size:13.5px;color:var(--muted)}
+.harbor-app .in-status{left:26px;bottom:-18px;height:124px}
+
+/* Weather */
+.harbor-app .storm-card{background:#edf3ef;border-color:#d9e6dd}
+.harbor-app .warning{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;background:var(--red);color:#fff;font-size:13.5px;font-weight:600;white-space:nowrap}
+.harbor-app .warning .icon{width:17px;height:17px}
+.harbor-app .hazards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.harbor-app .hazard{position:relative;min-height:196px;overflow:hidden;padding:16px 18px;border-radius:18px;background:var(--tint,#fff);border:1px solid #19241f0d}
+.harbor-app .hazard small{display:block;font-size:12.5px;color:var(--muted)}
+.harbor-app .hazard strong{display:block;margin:2px 0 1px;font-family:var(--display);font-size:23px;font-weight:500;letter-spacing:-.6px}
+.harbor-app .in-hazard{right:14px;bottom:-14px;height:112px}
+.harbor-app .hazard.also{display:grid;align-content:start;gap:14px;background:#fff;border-color:#e6e9e4}
+.harbor-app .also-row{display:flex;align-items:center;gap:12px}
+.harbor-app .also-row b{display:block;font-weight:600}
+.harbor-app .conditions h2 .muted{font:400 13px Inter,sans-serif;letter-spacing:0}
+.harbor-app .conditions .legend{display:flex;gap:14px;margin-left:auto;font:400 12.5px Inter,sans-serif;color:var(--muted)}
+.harbor-app .conditions .legend span{display:inline-flex;align-items:center;gap:6px}
+.harbor-app .conditions .legend i{display:block;width:9px;height:9px;border-radius:3px}
+.harbor-app .legend i.calm,.harbor-app .bar.calm i{background:#bcd5c6}
+.harbor-app .legend i.ts,.harbor-app .bar.ts i{background:#edb54e}
+.harbor-app .legend i.hu,.harbor-app .bar.hu i{background:var(--accent)}
+.harbor-app .wx-chart{position:relative;display:grid;gap:14px;height:272px;padding-top:50px}
+.harbor-app .bar{display:grid;grid-template-rows:18px 1fr 22px 34px;align-items:end;justify-items:center;min-width:0}
+.harbor-app .bar i{display:block;width:100%;max-width:56px;border-radius:8px 8px 3px 3px}
+.harbor-app .bar .v{font-size:12.5px;font-weight:600}
+.harbor-app .bar .rain{align-self:center;font-size:12px;color:#4f8a9a}
+.harbor-app .bar .t{align-self:start;font-size:11.5px;line-height:1.3;color:var(--muted);text-align:center}
+.harbor-app .mark{position:absolute;top:0;bottom:56px;z-index:1;padding-left:8px;border-left:2px dashed var(--ink);font-size:12px;line-height:1.3;color:var(--muted)}
+.harbor-app .mark b{display:block;color:var(--ink)}
+.harbor-app .mark.go{border-color:var(--green)}
+.harbor-app .mark.go b{color:var(--green)}
+.harbor-app .mark.closest{border-color:var(--accent)}
+.harbor-app .mark.closest b{color:#c4521f}
+.harbor-app .foot{margin-top:10px;font-size:12.5px;color:var(--muted)}
+
+/* Accounts */
+
+/* Route and shelters maps */
+.harbor-app .card.map{position:relative;min-height:640px;overflow:hidden;padding:0}
+.harbor-app .map-host{position:absolute;inset:0;background:#e9ece8}
+.harbor-app .leaflet-container{font-family:Inter,sans-serif;background:#e9ece8}
+.harbor-app .map-badge,.harbor-app .map-legend,.harbor-app .map-zoom{position:absolute;z-index:500;background:#ffffffe6;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.harbor-app .map-badge{left:18px;top:18px;padding:12px 16px;border-radius:14px;box-shadow:0 8px 24px #0b1f2a1f}
+.harbor-app .map-badge b{display:block;font-family:var(--display);font-size:26px;font-weight:500;letter-spacing:-.6px}
+.harbor-app .map-badge small{font-size:12.5px;color:var(--muted)}
+.harbor-app .map-legend{right:18px;top:18px;display:flex;gap:14px;padding:9px 14px;border-radius:12px;font-size:12.5px}
+.harbor-app .map-legend i{display:inline-block;width:16px;height:5px;margin-right:7px;border-radius:3px;vertical-align:middle}
+.harbor-app .l-route{background:var(--accent)}
+.harbor-app .l-cone{background:#19241f14;outline:1px dashed #19241f80}
+.harbor-app .map-zoom{right:16px;bottom:16px;display:grid;overflow:hidden;border:1px solid #ffffffb3;border-radius:14px;box-shadow:0 8px 24px #0b1f2a26}
+.harbor-app .map-zoom button{display:grid;place-items:center;width:40px;height:40px;font:500 20px Inter,sans-serif;color:var(--ink)}
+.harbor-app .map-zoom button+button{border-top:1px solid #19241f14}
+.harbor-app .map-zoom button:hover{background:#19241f0a}
+.harbor-app .map-zoom .icon{width:18px;height:18px}
+.harbor-app .cone{fill:#19241f;fill-opacity:.06;stroke:#19241f;stroke-opacity:.45;stroke-width:2;stroke-dasharray:6 6}
+.harbor-app .plan-tab{grid-template-rows:auto 1fr;min-height:calc(100vh - 140px)}
+.harbor-app .journey{display:flex;flex-direction:column;padding:26px 28px 0;overflow:hidden}
+.harbor-app .journey-head{display:flex;align-items:flex-start;gap:12px}
+.harbor-app .journey-head h2{margin:0 0 4px}
+.harbor-app .journey-head p{max-width:640px;margin:0;font-size:14.5px;color:var(--muted)}
+.harbor-app .plan-track{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:30px 0 16px;padding:0;list-style:none}
+.harbor-app .plan-track li{display:flex;align-items:center;gap:10px}
+.harbor-app .plan-track b{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;font-size:14px;font-weight:600}
+.harbor-app .plan-track li:after{content:'';order:1;flex:1;height:3px;border-radius:3px;background:var(--ink)}
+.harbor-app .plan-track li:nth-child(2) b,.harbor-app .plan-track li:nth-child(2):after{background:var(--accent)}
+.harbor-app .plan-track li:nth-child(3) b,.harbor-app .plan-track li:nth-child(3):after{background:var(--green)}
+.harbor-app .plan-track .track-end{order:2}
+.harbor-app .phases{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.harbor-app .track-end{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:#fbe7e7;color:#b23b3b;font-size:12.5px;font-weight:600;white-space:nowrap}
+.harbor-app .track-end .icon{width:15px;height:15px}
+.harbor-app .track-end.ok{background:var(--green-soft);color:var(--green)}
+.harbor-app .phase{position:relative;display:flex;flex-direction:column;min-height:330px;overflow:hidden;padding:22px 20px 24px;border-radius:18px 18px 0 0;background:#f6f8f5}
+.harbor-app .phase-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+.harbor-app .phase-value{margin:4px 0 14px;font-family:var(--display);font-size:30px;font-weight:500;letter-spacing:-.9px;line-height:1.15}
+.harbor-app .phase-list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.harbor-app .phase-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--ink2)}
+.harbor-app .phase-list .icon{flex:none;width:17px;height:17px;margin-top:2px;color:var(--muted)}
+.harbor-app .phase-list small{display:block;font-size:12.5px;color:var(--muted)}
+.harbor-app .in-phase{right:14px;bottom:-18px;height:150px}
+
+/* Empty states */
+.harbor-app .empty{position:relative;display:flex;align-items:center;min-height:300px;overflow:hidden;padding:40px 48px 40px 300px}
+.harbor-app .empty h2{margin:0 0 8px;font-size:26px;letter-spacing:-.7px}
+.harbor-app .empty p{max-width:480px;margin:0 0 20px;font-size:15px;color:var(--muted)}
+.harbor-app .in-empty{left:56px;bottom:-22px;height:240px}
+.harbor-app .track{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-dasharray:2 7;opacity:.6}
+.harbor-app .pin{position:absolute;left:0;top:0;display:grid;place-items:center;box-sizing:border-box;border-radius:50%;transform:translate(-50%,-50%)}
+.harbor-app .leaflet-tooltip{padding:5px 10px;border:0;border-radius:8px;box-shadow:0 2px 8px #0003;font:600 13px Inter,sans-serif;color:var(--ink)}
+.harbor-app .modal-scrim{position:absolute;inset:0;cursor:default}
+.harbor-app .spane>:nth-last-child(2){margin-bottom:24px}
+.harbor-app .route-outline{fill:none;stroke:#a9b8af;stroke-width:9;stroke-linecap:round;stroke-linejoin:round;cursor:pointer}
+.harbor-app .route-core{fill:none;stroke:#cfdad3;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;cursor:pointer}
+.harbor-app .route-outline.on{stroke:#b8481f;stroke-width:10;cursor:default}
+.harbor-app .route-core.on{stroke:var(--accent);stroke-width:7;cursor:default}
+.harbor-app .pin.count{width:30px;height:30px;border:3px solid #fff;background:var(--ink);box-shadow:0 2px 6px #0003;font-size:13px;font-weight:700;color:#fff;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.harbor-app .pin.count.best{background:var(--green)}
+.harbor-app .pin.count.on{transform:translate(-50%,-50%) scale(1.2);box-shadow:0 0 0 6px #19241f1f,0 4px 10px #0003}
+.harbor-app .pin.origin{width:16px;height:16px;background:#fff;border:4px solid var(--ink);box-shadow:0 1px 4px #0005}
+.harbor-app .pin.end{width:12px;height:12px;background:#fff;border:3px solid #82a894;cursor:pointer}
+.harbor-app .drop{position:absolute;left:-13px;top:-35px;width:26px;height:36px;filter:drop-shadow(0 2px 3px #0004)}
+.harbor-app .drop path{fill:var(--accent);stroke:#b8481f;stroke-width:1}
+.harbor-app .drop circle{fill:#fff}
+.harbor-app .leave{min-height:124px;padding-left:146px}
+.harbor-app .leave .in-status{left:14px;bottom:-16px;height:124px}
+.harbor-app .leave strong{font-size:22px}
+.harbor-app .dest{display:flex;align-items:center;gap:12px;width:100%;margin-top:8px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);text-align:left}
+.harbor-app .dest:hover{background:#f7f8f5}
+.harbor-app .dest.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.harbor-app .dest b{font-weight:600}
+.harbor-app .dest small{display:block;font-size:12.5px;color:var(--muted)}
+.harbor-app .dest strong{font-family:var(--display);font-size:20px;font-weight:500}
+.harbor-app .stop{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #eef0ec}
+.harbor-app .stop:first-of-type{border-top:0}
+.harbor-app .stop>.icon{flex:none;width:18px;height:18px;color:var(--accent)}
+.harbor-app .stop b{font-weight:500}
+.harbor-app .stop small{display:block;font-size:12.5px;color:var(--muted)}
+.harbor-app .map-app img{width:18px;height:18px}
+.harbor-app .eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--green)}
+.harbor-app .filters{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.harbor-app .filters .muted{margin-left:auto;font-size:13px}
+.harbor-app .shelter-grid{grid-template-columns:1fr 1.2fr;align-items:stretch}
+.harbor-app .shelter-grid .card.map{min-height:430px}
+.harbor-app .slist{padding:8px}
+.harbor-app .srow{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border-radius:14px;text-align:left}
+.harbor-app .srow+.srow{margin-top:2px}
+.harbor-app .srow:hover{background:#f4f6f2}
+.harbor-app .srow.on{background:#eef3ef}
+.harbor-app .srow b{font-weight:600}
+.harbor-app .srow small{display:block;overflow:hidden;font-size:12.5px;color:var(--muted);text-overflow:ellipsis;white-space:nowrap}
+.harbor-app .srow em{font-style:normal;font-weight:500;color:#c4521f}
+.harbor-app .srow .cap{flex:none;width:84px;text-align:right}
+.harbor-app .srow .cap .ok{color:var(--green)}
+.harbor-app .srow .cap .full{color:#b23b3b}
+.harbor-app .srow .sfacts{margin-top:3px;color:var(--soft)}
+.harbor-app .filters .quick-ask{width:300px}
+.harbor-app .filters .quick-ask input::-webkit-search-cancel-button{display:none}
+.harbor-app .num-badge{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px;font-weight:600}
+.harbor-app .num-badge.best{background:var(--green)}
+.harbor-app .modal-back{position:fixed;inset:0;z-index:1100;display:grid;place-items:center;padding:24px;background:#19241f33;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.harbor-app .modal{position:relative;display:grid;grid-template-columns:210px 1fr;width:min(1000px,100%);height:min(720px,calc(100vh - 48px));overflow:hidden;border-radius:24px;background:#ffffffeb;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid #ffffffb3;box-shadow:0 30px 90px #0b1f2a40;animation:fade .2s var(--ease)}
+.harbor-app .stabs{display:flex;flex-direction:column;gap:2px;padding:24px 12px;background:#f3f5f1cc;border-right:1px solid var(--line)}
+.harbor-app .stabs b{margin:0 12px 16px;font-family:var(--display);font-size:21px;font-weight:500;letter-spacing:-.5px}
+.harbor-app .stabs button{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;font-size:14.5px;color:var(--ink2);text-align:left}
+.harbor-app .stabs button .icon{width:18px;height:18px}
+.harbor-app .stabs button[aria-pressed=true]{background:#fff;color:var(--ink);font-weight:500;box-shadow:0 1px 2px #0000000f}
+.harbor-app .spane{display:flex;flex-direction:column;min-height:0;overflow:auto;padding:28px 34px 0}
+.harbor-app .spane h2{margin-bottom:18px;font-size:25px;letter-spacing:-.7px}
+.harbor-app .spane h3{margin:24px 0 6px;font:600 12px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+.harbor-app .sfoot{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding:16px 0 20px;background:linear-gradient(#ffffff00,#ffffffeb 30%)}
+.harbor-app .sfoot small{font-size:12.5px;color:var(--muted)}
+.harbor-app .close{position:absolute;right:16px;top:16px;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--panel);color:var(--ink)}
+.harbor-app .close .icon{width:18px;height:18px}
+.harbor-app .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.harbor-app .field{display:grid;gap:6px;min-width:0;font-size:13px;font-weight:500;color:var(--muted)}
+.harbor-app .field.wide{grid-column:1/-1}
+.harbor-app .field input,.harbor-app .field select{width:100%;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--paper);font:inherit;font-size:14.5px;font-weight:400;color:var(--ink);outline:0}
+.harbor-app .field input:focus,.harbor-app .field select:focus{border-color:#c9cfc6;background:#fff}
+.harbor-app .field .search{margin:0;max-width:none}
+.harbor-app .edit-row{display:flex;align-items:end;gap:10px;padding:8px 0}
+.harbor-app .edit-row .field{flex:1}
+.harbor-app .edit-row .icon-btn{margin-bottom:6px}
+.harbor-app .line,.harbor-app .setting{display:flex;align-items:center;gap:16px;padding:14px 0;border-top:1px solid #eef0ec}
+.harbor-app .line b,.harbor-app .setting b{font-weight:500;color:var(--ink)}
+.harbor-app .line small,.harbor-app .setting small{display:block;font-size:12.5px;color:var(--muted)}
+.harbor-app .setting{cursor:pointer}
+.harbor-app .seg{display:inline-flex;flex-wrap:wrap;padding:3px;border-radius:999px;background:var(--panel);font-size:13px;font-weight:500}
+.harbor-app .seg button{padding:6px 14px;border-radius:999px;color:var(--muted)}
+.harbor-app .seg button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 2px #0000001a}
+.harbor-app .switch{position:relative;flex:none;width:44px;height:26px;border-radius:13px;background:#dfe3dd;appearance:none;-webkit-appearance:none;cursor:pointer;transition:background .2s}
+.harbor-app .switch:after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0003;transition:left .2s var(--ease)}
+.harbor-app .switch:checked{background:var(--green)}
+.harbor-app .switch:checked:after{left:21px}
+.harbor-app .range-input{width:180px;accent-color:var(--ink)}
+.harbor-app .hint .icon{width:16px;height:16px;color:var(--green)}
+.harbor-app .onboard .hint{display:block;margin-top:14px}
+.harbor-app .main:has(.chat-page){height:100dvh;max-width:none;display:flex;flex-direction:column}
+.harbor-app .chat-page{flex:1;min-height:0;display:flex}
+.harbor-app .chat{flex:1;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.harbor-app .messages{--col:max(22px,calc((100% - 760px)/2));flex:1;overflow:auto;list-style:none;margin:0;padding:28px var(--col);display:flex;flex-direction:column;gap:14px}
+.harbor-app .msg{display:grid;max-width:82%;gap:4px}
+.harbor-app .msg.user{align-self:flex-end;justify-items:end}
+.harbor-app .bubble{padding:11px 15px;border-radius:18px;font-size:15px;line-height:1.55;background:var(--panel);border-bottom-left-radius:4px;white-space:pre-line}
+.harbor-app .msg.user .bubble{background:var(--ink);color:#fff;border-radius:18px;border-bottom-right-radius:4px}
+.harbor-app .msg.error .bubble{background:#fbeceb;color:#9e3434}
+.harbor-app .msg small{font-size:11px;color:var(--soft);padding:0 6px}
+.harbor-app .prompts{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:8px}
+.harbor-app .composer input:focus{border-color:#c9cfc6;background:#fff;box-shadow:0 0 0 4px #19241f0d}
+.harbor-app .toast{position:fixed;left:50%;bottom:28px;z-index:1000;transform:translate(-50%,20px);opacity:0;display:flex;align-items:center;gap:10px;max-width:min(560px,92vw);padding:12px 18px;border-radius:12px;background:var(--ink);color:#fff;font-size:14px;box-shadow:0 14px 40px #19241f40;transition:opacity .3s,transform .3s var(--ease);pointer-events:none}
+.harbor-app .toast.show{opacity:1;transform:translate(-50%,0)}
+.harbor-app .toast .icon{width:18px;height:18px;color:#7fe0a8}
+.harbor-app .toast[data-tone=error] .icon{color:#ff9b8f}
+.harbor-app .offline{max-width:420px;text-align:center;font-size:14px;line-height:1.7;color:var(--muted)}
+.harbor-app .offline b{color:var(--ink);font-weight:600}
+.harbor-app .offline code{padding:2px 6px;border-radius:6px;background:var(--panel);font-size:13px;color:var(--ink)}
+.harbor-app .offline a{color:var(--accent);font-weight:500}
+.harbor-app .tour{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:24px;background:#19241f40;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.harbor-app .tour-card{display:grid;grid-template-columns:220px 1fr;width:min(720px,100%);overflow:hidden;border-radius:28px;background:#fff;box-shadow:0 40px 100px #0b1f2a4d;animation:tour-in .45s var(--ease)}
+@keyframes tour-in{from{opacity:0;transform:translateY(16px) scale(.98)}}
+.harbor-app .character{display:grid;place-items:end center;min-height:240px;padding:18px 14px 6px}
+.harbor-app .character-art{width:100%;max-width:210px;height:auto;overflow:visible}
+.harbor-app .character .wave{transform-box:fill-box;transform-origin:0% 100%;animation:wave 1.8s ease-in-out infinite}
+.harbor-app .character .eyes{transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}
+@keyframes wave{50%{rotate:-14deg}}
+@keyframes blink{0%,92%,100%{scale:1 1}95%{scale:1 .1}}
+.harbor-app .tour-body{display:flex;flex-direction:column;padding:30px 30px 24px}
+.harbor-app .tour-name{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent)}
+.harbor-app .tour-body h2{margin-top:8px;font-size:28px;letter-spacing:-.8px;line-height:1.15}
+.harbor-app .tour-body p{margin-top:10px;font-size:15px;line-height:1.6;color:var(--muted)}
+.harbor-app .tour-actions{display:flex;align-items:center;gap:16px;margin-top:auto;padding-top:22px}
+.harbor-app .tour-actions .button{height:44px;padding:0 20px;gap:10px}
+.harbor-app .tour-dots{display:flex;gap:6px;margin-right:auto}
+.harbor-app .tour-dots span{width:7px;height:7px;border-radius:4px;background:#dfe3dd;transition:width .3s var(--ease)}
+.harbor-app .tour-dots .on{width:22px;background:var(--ink)}
+.harbor-app .chat-start{justify-content:center;align-items:center;gap:18px;padding:24px;text-align:center}
+.harbor-app .chat-mark{width:64px;height:64px}
+.harbor-app .chat-start .pun{font-size:28px;letter-spacing:-.8px}
+.harbor-app .chat-start .prompts{max-width:680px}
+.harbor-app .composer{padding:14px max(14px,calc((100% - 760px)/2)) 18px}
+.harbor-app .composer .bar{display:flex;align-items:center;gap:8px;height:54px;padding:0 7px 0 20px;border-radius:999px;border:1px solid var(--line);background:var(--paper);transition:border-color .2s,box-shadow .2s}
+.harbor-app .composer .bar:focus-within{border-color:#c9cfc6;background:#fff;box-shadow:0 0 0 4px #19241f0d}
+.harbor-app .composer input{flex:1;min-width:0;height:100%;border:0;outline:0;background:none;font:inherit;font-size:15px}
+.harbor-app .send{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:50%;background:var(--ink);color:#fff}
+.harbor-app .send[disabled]{opacity:.45}
+.harbor-app .send .icon{width:17px;height:17px;transform:rotate(-90deg)}
+.harbor-app .chat-start .composer{width:min(680px,100%);padding:0}
+.harbor-app .think{display:grid;gap:6px;max-width:560px;padding:6px 2px}
+.harbor-app .shimmer{width:max-content;font-size:14.5px;font-weight:500;color:transparent;background:linear-gradient(90deg,#8f9a93 0%,#8f9a93 40%,var(--ink) 50%,#8f9a93 60%,#8f9a93 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;animation:shimmer 1.8s linear infinite}
+@keyframes shimmer{from{background-position:100% 0}to{background-position:-150% 0}}
+.harbor-app .think-text{margin:0;font-size:13px;line-height:1.55;color:var(--soft);white-space:pre-line;-webkit-mask-image:linear-gradient(transparent,#000 40%);mask-image:linear-gradient(transparent,#000 40%);max-height:4.7em;overflow:hidden}
+.harbor-app .thought{max-width:560px;font-size:12.5px;color:var(--soft)}
+.harbor-app .thought summary{cursor:pointer;list-style:none;width:max-content}
+.harbor-app .thought summary::-webkit-details-marker{display:none}
+.harbor-app .thought summary:after{content:' ›'}
+.harbor-app .thought[open] summary:after{content:' ⌄'}
+.harbor-app .thought p{margin:6px 0 4px;white-space:pre-line;line-height:1.55}
+.harbor-app .bubble.md{white-space:normal}
+.harbor-app .bubble.md>*{margin:0}
+.harbor-app .bubble.md>*+*{margin-top:8px}
+.harbor-app .bubble.md ul,.harbor-app .bubble.md ol{padding-left:20px}
+.harbor-app .bubble.md li+li{margin-top:3px}
+.harbor-app .bubble.md strong{font-weight:600}
+.harbor-app .bubble.md a{text-decoration:underline;text-underline-offset:3px}
+@media(max-width:1100px){
+  .harbor-app .hazards{grid-template-columns:1fr 1fr}
+  .harbor-app .cols,.harbor-app .cols.wide-left,.harbor-app .cols.map-left,.harbor-app .shelter-grid{grid-template-columns:1fr}
+  .harbor-app .quick-ask{display:none}
+}
+@media(max-width:760px){
+  .harbor-app .shell{display:block}
+  .harbor-app .side{position:fixed;z-index:900;inset:auto 0 0;height:auto;display:block;padding:6px 6px calc(6px + env(safe-area-inset-bottom));background:#f8f9f6eb;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-right:0;border-top:1px solid var(--line)}
+  .harbor-app .side .brand,.harbor-app .side-user{display:none}
+  .harbor-app .tabs{display:grid;grid-template-columns:repeat(6,1fr)}
+  .harbor-app .side-link,.harbor-app .side-link[aria-current=page]{flex-direction:column;gap:3px;padding:6px 0 4px;font-size:10px;font-weight:500;background:none;box-shadow:none;color:var(--muted)}
+  .harbor-app .side-link[aria-current=page]{color:var(--ink)}
+  .harbor-app .side-link .icon{width:22px;height:22px}
+  .harbor-app .dot-badge{position:absolute;top:4px;left:calc(50% + 8px);margin:0}
+  .harbor-app .main{padding:calc(12px + env(safe-area-inset-top)) 16px calc(88px + env(safe-area-inset-bottom))}
+  .harbor-app .topbar{gap:10px;margin-bottom:14px}
+  .harbor-app .topbar h1{font-size:24px}
+  .harbor-app .in-status{left:10px;height:96px}
+  .harbor-app .hazards{grid-template-columns:1fr}
+  .harbor-app .card{padding:16px}
+  .harbor-app .card.map{min-height:52dvh}
+  .harbor-app .conditions .legend{display:none}
+  .harbor-app .fund-big strong{font-size:38px}
+  .harbor-app .modal-back{padding:0}
+  .harbor-app .modal{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:100dvh;border-radius:0}
+  .harbor-app .stabs{flex-direction:row;overflow-x:auto;padding:12px;border-right:0;border-bottom:1px solid var(--line);scrollbar-width:none}
+  .harbor-app .stabs b{display:none}
+  .harbor-app .stabs button{flex:none}
+  .harbor-app .spane{padding:18px 16px 0}
+  .harbor-app .grid2{grid-template-columns:1fr}
+  .harbor-app .edit-row{flex-wrap:wrap}
+  .harbor-app input,.harbor-app select,.harbor-app textarea,.harbor-app .composer input,.harbor-app .field input{font-size:16px}
+  .harbor-app .main:has(.chat-page){padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+  .harbor-app .messages{padding:16px 14px}
+  .harbor-app .msg{max-width:88%}
+  .harbor-app .toast{bottom:calc(92px + env(safe-area-inset-bottom))}
+  .harbor-app .onboard-card{padding:30px 20px 22px}
+  .harbor-app .onboard-card h1{font-size:26px}
+  .harbor-app .tour{place-items:end stretch;padding:0}
+  .harbor-app .tour-card{grid-template-columns:1fr;border-radius:28px 28px 0 0;padding-bottom:env(safe-area-inset-bottom)}
+  .harbor-app .character{min-height:170px}
+  .harbor-app .character-art{max-width:170px}
+  .harbor-app .tour-body{padding:20px 22px 22px}
+}

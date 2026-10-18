@@ -1,0 +1,67 @@
+# Check the server and the app in parallel (via the Makefile), then deploy the site to
+# GitHub Pages (https://<user>.github.io/<repo>/) when both pass on main.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - run: cd server && uv sync --locked
+      - run: make check-server
+        env:
+          # Server-side only: runs the live Ask Harbor test. Never baked into the website build.
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          HARBOR_LIVE_TESTS: ${{ secrets.OPENROUTER_API_KEY != '' && '1' || '' }}
+
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ hashFiles('app/bun.lock') }}
+      - run: cd app && bun install --frozen-lockfile
+      - run: make check-app
+      - if: github.ref == 'refs/heads/main'
+        run: make build
+        env:
+          HARBOR_BASE_PATH: /${{ github.event.repository.name }}
+          HARBOR_API_URL: ${{ vars.HARBOR_API_URL }} # optional: a deployed Harbor server
+      - if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/dist
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [server, app]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - id: pages
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,7 @@
+/* Map markers: a soft ring pulses around home and the destination */
+.map-marker{position:relative}
+.map-marker:not(.muted):before{content:'';position:absolute;inset:-12px;border-radius:50%;border:2px solid var(--ink);opacity:0;animation:ring 2.4s ease-out infinite}
+.map-marker.destination:before{border-color:var(--accent)}
+@keyframes ring{0%{transform:scale(.4);opacity:.8}100%{transform:scale(1.6);opacity:0}}
+/* Route line in product mocks */
+.dash{stroke-dasharray:6 6}
